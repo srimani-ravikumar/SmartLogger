@@ -1,0 +1,22 @@
+﻿{
+    "RootLogLevel": "INFO",
+
+    "LoggerOverrides": {
+        "DatabaseService": "ERROR",
+        "PaymentService": "WARNING"
+    },
+
+    "Appenders": [
+        {
+            "Type": "Console",
+            "Threshold": "DEBUG"
+        },
+        {
+            "Type": "File",
+            "Threshold": "INFO",
+            "Settings": {
+                "filePath": "logs/app.log"
+            }
+        }
+    ]
+}

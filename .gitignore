@@ -1,0 +1,89 @@
+# =========================
+# Build results
+# =========================
+bin/
+obj/
+
+# =========================
+# Visual Studio
+# =========================
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# =========================
+# Rider / VS Code
+# =========================
+.idea/
+.vscode/
+
+# =========================
+# OS generated files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# ASP.NET Core
+# =========================
+appsettings.Development.json
+appsettings.Local.json
+
+# =========================
+# User secrets
+# =========================
+secrets.json
+
+# =========================
+# Publish output
+# =========================
+**/Properties/PublishProfiles/
+
+# =========================
+# EF Core
+# =========================
+Migrations/*.Designer.cs
+Migrations/*.resx
+
+# =========================
+# Test results
+# =========================
+TestResults/
+
+# =========================
+# NuGet
+# =========================
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# =========================
+# Environment files
+# =========================
+.env
+.env.*
+
+# =========================
+# Docker (optional)
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Coverage
+# =========================
+coverage/
+coverage.cobertura.xml
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+*.temp

@@ -1,8 +1,10 @@
-﻿namespace SmartLogger.Core
+﻿using System;
+
+namespace SmartLogger.Core
 {
     public static class LoggerManager
     {
-        private static LoggerFactory? _factory;
+        private static LoggerFactory _factory;
 
         public static void Initialize(ILogConfigurationProvider provider)
         {

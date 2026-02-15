@@ -1,4 +1,7 @@
 ﻿using SmartLogger.Core;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SmartLogger.Configurations;
 
@@ -8,7 +11,7 @@ public class InMemoryConfigurationProvider : ILogConfigurationProvider
 
     public InMemoryConfigurationProvider(LogConfigurationHolder configuration)
     {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));        
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     public LogConfigurationHolder Load()

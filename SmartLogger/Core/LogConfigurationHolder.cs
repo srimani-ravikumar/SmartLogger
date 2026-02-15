@@ -1,4 +1,6 @@
-﻿namespace SmartLogger.Core
+﻿using System.Collections.Generic;
+
+namespace SmartLogger.Core
 {
     public class LogConfigurationHolder
     {

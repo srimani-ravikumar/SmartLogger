@@ -1,20 +1,24 @@
 ﻿using SmartLogger.Core;
+using System;
+using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace SmartLogger.Configurations;
 
 public class JsonConfigurationProvider : ILogConfigurationProvider
 {
     private readonly string _filePath;
-    private FileSystemWatcher? _watcher;
+    private FileSystemWatcher _watcher;
     private readonly object _reloadLock = new();
 
     public JsonConfigurationProvider(string filePath)
     {
-        if(string.IsNullOrWhiteSpace(filePath))
+        if (string.IsNullOrWhiteSpace(filePath))
         {
-            throw new ArgumentNullException(nameof(filePath)); 
+            throw new ArgumentNullException(nameof(filePath));
         }
 
         if (Path.IsPathRooted(filePath))

@@ -1,4 +1,6 @@
-﻿namespace SmartLogger.Core;
+﻿using System.Collections.Generic;
+
+namespace SmartLogger.Core;
 
 /// <summary>
 /// Defines the primary logging operations and configuration capabilities for the SmartLogger framework.

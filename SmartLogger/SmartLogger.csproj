@@ -1,9 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
 
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+
+    <PackageId>SmartLogger</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Srimani</Authors>
+    <Description>Extensible logging framework</Description>
+    <PackageTags>logging;dotnet;logger</PackageTags>
+    <RepositoryUrl>https://github.com/srimani-ravikumar/SmartLogger.git</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
 </Project>

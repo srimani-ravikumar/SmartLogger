@@ -15,4 +15,5 @@
     <ProjectReference Include="..\SmartLogger\SmartLogger.csproj" />
   </ItemGroup>
 
+  <IsPackable>false</IsPackable>
 </Project>

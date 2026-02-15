@@ -1,5 +1,7 @@
 ﻿using SmartLogger.Appenders;
-using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace SmartLogger.Core;
 
@@ -14,7 +16,7 @@ public class LoggerImplementation : ISmartLogger
     private readonly List<ILogFilter> _filters;
 
     // AsyncLocal ensures the CorrelationId is unique to the current request/execution flow
-    private static readonly AsyncLocal<string?> _correlationId = new();
+    private static readonly AsyncLocal<string> _correlationId = new();
 
     /// <summary>
     /// Gets the current global log level for this logger.
@@ -116,7 +118,7 @@ public class LoggerImplementation : ISmartLogger
         try
         {
             var stackTrace = new System.Diagnostics.StackTrace();
-            System.Reflection.MethodBase? method = null;
+            System.Reflection.MethodBase method = null;
 
             // Walk up the stack (starting at index 1 to skip this method)
             for (int i = 1; i < stackTrace.FrameCount; i++)

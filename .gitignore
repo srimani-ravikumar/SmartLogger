@@ -87,3 +87,5 @@ coverage.cobertura.xml
 # =========================
 *.tmp
 *.temp
+
+SmartLogger.Console/

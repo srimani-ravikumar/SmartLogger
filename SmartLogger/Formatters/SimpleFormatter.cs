@@ -1,4 +1,5 @@
 ﻿using SmartLogger.Core;
+using System;
 
 namespace SmartLogger.Formatters
 {

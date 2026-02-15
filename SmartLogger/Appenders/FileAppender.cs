@@ -1,5 +1,7 @@
 ﻿using SmartLogger.Core;
 using SmartLogger.Formatters;
+using System;
+using System.IO;
 
 namespace SmartLogger.Appenders;
 

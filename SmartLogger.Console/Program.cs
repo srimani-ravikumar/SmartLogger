@@ -5,9 +5,9 @@ using SmartLogger.Filters;
 Console.WriteLine("=== Smart Logger Framework Demo ===");
 Console.WriteLine();
 
-//DemoBasicLoggingWithJsonConfigProvider();
+DemoBasicLoggingWithJsonConfigProvider();
 
-//DemoBasicLoggingWithInMemoryConfigProvider();
+DemoBasicLoggingWithInMemoryConfigProvider();
 
 DemoMultiThreadedLoggingWithJsonConfigProvider();
 

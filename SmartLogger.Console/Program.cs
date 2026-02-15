@@ -5,14 +5,16 @@ using SmartLogger.Filters;
 Console.WriteLine("=== Smart Logger Framework Demo ===");
 Console.WriteLine();
 
-DemoBasicLogging();
+DemoBasicLoggingWithJsonConfigProvider();
+
+DemoBasicLoggingWithInMemoryConfigProvider();
 
 Console.WriteLine();
 Console.WriteLine("=== Demo Completed ===");
 
-void DemoBasicLogging()
+void DemoBasicLoggingWithJsonConfigProvider()
 {
-    Console.WriteLine("1. Basic Logging & Context Demo...");
+    Console.WriteLine("1. Basic Logging with JSON Config Provider Demo...");
     Console.WriteLine("-----------------------------------");
 
     // 1. Create configuration provider
@@ -22,6 +24,70 @@ void DemoBasicLogging()
     ILogConfigurationProvider provider =
         new JsonConfigurationProvider(path);
 
+
+    // 2. Register logger factory
+    LoggerManager.Initialize(provider);
+
+    // 3. Get logger
+    ISmartLogger logger = LoggerManager.GetLogger("Program");
+
+    // 2. Set a Correlation ID for the current request context
+    // LoggerImplementation.SetCorrelationId("REQ-550E");
+
+    // 3. Log basic levels
+    // The source will automatically be captured as "Program.DemoBasicLogging"
+    logger.Debug("Initializing system components...");
+    logger.Info("User 'JohnDoe' has connected.");
+    logger.Warning("Memory usage is reaching 80% threshold.");
+
+    // 4. Simulate an Error
+    try
+    {
+        throw new InvalidOperationException("Database connection failed!");
+    }
+    catch (Exception ex)
+    {
+        logger.Error($"Critical Error: {ex.Message}");
+    }
+
+    // 5. Demonstrate Filtering
+    Console.WriteLine("\n--- Testing Level Filter (Setting to Warning only) ---");
+    logger.AddFilter(new LevelFilter(LogLevel.WARNING));
+
+    logger.Info("This info message will NOT be displayed.");
+    logger.Fatal("SYSTEM HALTED: Kernel panic detected.");
+}
+
+void DemoBasicLoggingWithInMemoryConfigProvider()
+{
+    Console.WriteLine("1. Basic Logging with In-Memory Config Provider Demo...");
+    Console.WriteLine("-----------------------------------");
+
+    // 1. Create configuration provider
+    var config = new LogConfigurationHolder
+    {
+        RootLogLevel = LogLevel.INFO,
+        Appenders = new List<AppenderConfiguration>
+    {
+        new AppenderConfiguration
+        {
+            Destination = LogOutputDestination.Console,
+            Threshold = LogLevel.DEBUG
+        },
+        new AppenderConfiguration
+        {
+            Destination = LogOutputDestination.FileSystem,
+            Threshold = LogLevel.INFO,
+            Settings = new Dictionary<string, string>
+            {
+                { "filePath", "logs/app.log" }
+            }
+        }
+    }
+    };
+
+    ILogConfigurationProvider provider =
+        new InMemoryConfigurationProvider(config);
 
     // 2. Register logger factory
     LoggerManager.Initialize(provider);

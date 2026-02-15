@@ -55,6 +55,6 @@ These are the same principles applied in production backend and distributed syst
 
 ## In essence on what I gathered after designed this system
 
-**SmartLogger demonstrates how careful system design decisions shape reliability, performance, and observability — even in something as common as logging.**
+**SmartLogger demonstrates how careful system design decisions shape reliability, performance, and observability. Even in something as common as logging.**
 
 ---

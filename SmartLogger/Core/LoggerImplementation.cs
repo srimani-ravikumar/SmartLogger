@@ -21,15 +21,15 @@ public class LoggerImplementation : ISmartLogger
     /// <summary>
     /// Gets the current global log level for this logger.
     /// </summary>
-    public LogLevel LogLevel { get; private set; }
+    internal LogLevel LogLevel { get; private set; }
 
-    public LoggerImplementation() : this("DefaultLogger") { }
+    internal LoggerImplementation() : this("DefaultLogger") { }
 
-    public LoggerImplementation(string name) : this(name, LogLevel.INFO, true) { }
+    internal LoggerImplementation(string name) : this(name, LogLevel.INFO, true) { }
 
-    public LoggerImplementation(string name, LogLevel loglevel) : this(name, loglevel, true) { }
+    internal LoggerImplementation(string name, LogLevel loglevel) : this(name, loglevel, true) { }
 
-    public LoggerImplementation(string name, LogLevel logLevel, bool enableDefaultAppender)
+    internal LoggerImplementation(string name, LogLevel logLevel, bool enableDefaultAppender)
     {
         _name = name;
         LogLevel = logLevel;
@@ -45,7 +45,7 @@ public class LoggerImplementation : ISmartLogger
     /// <summary>
     /// Sets a Correlation ID for the current logical operation/thread.
     /// </summary>
-    public static void SetCorrelationId(string id) => _correlationId.Value = id;
+    internal static void SetCorrelationId(string id) => _correlationId.Value = id;
 
     /// <summary>
     /// The primary logging method that constructs the <see cref="LogMessage"/> and notifies appenders.
@@ -81,24 +81,44 @@ public class LoggerImplementation : ISmartLogger
 
     #region Convenience Methods
 
+    /// <inheritdoc/>
     public void Debug(string message) => Log(LogLevel.DEBUG, message);
+
+    /// <inheritdoc/>
     public void Info(string message) => Log(LogLevel.INFO, message);
+
+    /// <inheritdoc/>
     public void Warning(string message) => Log(LogLevel.WARNING, message);
+
+    /// <inheritdoc/>
     public void Error(string message) => Log(LogLevel.ERROR, message);
+
+    /// <inheritdoc/>
     public void Fatal(string message) => Log(LogLevel.FATAL, message);
 
     #endregion
 
     #region Management Methods
 
+    /// <inheritdoc/>
     public IList<ILogAppender> GetLogAppenders() => _appenders.AsReadOnly();
+
+    /// <inheritdoc/>
     public void AddAppender(ILogAppender appender) => _appenders.Add(appender);
+
+    /// <inheritdoc/>
     public void RemoveAppender(ILogAppender appender) => _appenders.Remove(appender);
 
+    /// <inheritdoc/>
     public IList<ILogFilter> GetLogFilters() => _filters.AsReadOnly();
+
+    /// <inheritdoc/>
     public void AddFilter(ILogFilter filter) => _filters.Add(filter);
+
+    /// <inheritdoc/>
     public void RemoveFilter(ILogFilter filter) => _filters.Remove(filter);
 
+    /// <inheritdoc/>
     public void SetLogLevel(LogLevel level) => LogLevel = level;
 
     #endregion

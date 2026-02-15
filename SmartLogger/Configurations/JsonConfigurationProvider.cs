@@ -8,12 +8,25 @@ using System.Threading;
 
 namespace SmartLogger.Configurations;
 
+/// <summary>
+/// Loads SmartLogger configuration from a JSON file
+/// and optionally supports real-time auto-reloading
+/// when the file changes.
+/// </summary>
 public class JsonConfigurationProvider : ILogConfigurationProvider
 {
     private readonly string _filePath;
     private FileSystemWatcher _watcher;
     private readonly object _reloadLock = new();
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="JsonConfigurationProvider"/>
+    /// with the specified configuration file path.
+    /// </summary>
+    /// <param name="filePath">Relative or absolute path to the JSON configuration file.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the file path is null or empty.
+    /// </exception>
     public JsonConfigurationProvider(string filePath)
     {
         if (string.IsNullOrWhiteSpace(filePath))
@@ -28,6 +41,7 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
 
     }
 
+    /// <inheritdoc/>
     public LogConfigurationHolder Load()
     {
         if (!File.Exists(_filePath))
@@ -80,6 +94,10 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
         }
     }
 
+    /// <summary>
+    /// Enables automatic reloading of the configuration
+    /// when the underlying JSON file changes.
+    /// </summary>
     public void EnableAutoReload()
     {
         string directory = Path.GetDirectoryName(_filePath)!;

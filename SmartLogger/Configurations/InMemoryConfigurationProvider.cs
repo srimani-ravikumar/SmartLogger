@@ -5,15 +5,28 @@ using System.Linq;
 
 namespace SmartLogger.Configurations;
 
+/// <summary>
+/// Provides SmartLogger configuration from an in-memory
+/// configuration object. Useful for testing or programmatic setup.
+/// </summary>
 public class InMemoryConfigurationProvider : ILogConfigurationProvider
 {
     private readonly LogConfigurationHolder _configuration;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="InMemoryConfigurationProvider"/>
+    /// with a pre-constructed configuration object.
+    /// </summary>
+    /// <param name="configuration">The configuration to use.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the configuration is null.
+    /// </exception>
     public InMemoryConfigurationProvider(LogConfigurationHolder configuration)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
+    /// <inheritdoc/>
     public LogConfigurationHolder Load()
     {
         Validate(_configuration);
@@ -39,7 +52,9 @@ public class InMemoryConfigurationProvider : ILogConfigurationProvider
         }
     }
 
-    // Optional helper factory method for quick setup
+    /// <summary>
+    ///  Optional helper factory method for quick setup
+    /// </summary>
     public static InMemoryConfigurationProvider CreateDefault()
     {
         var config = new LogConfigurationHolder

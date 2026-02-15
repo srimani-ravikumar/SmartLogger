@@ -3,15 +3,35 @@ using System;
 
 namespace SmartLogger.Core;
 
+/// <summary>
+/// Responsible for creating configured <see cref="ISmartLogger"/> instances
+/// based on the active <see cref="LogConfigurationHolder"/>.
+/// </summary>
 public class LoggerFactory
 {
     private volatile LogConfigurationHolder _configuration;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="LoggerFactory"/>
+    /// using the specified configuration provider.
+    /// </summary>
+    /// <param name="provider">
+    /// The configuration provider used to load logging settings.
+    /// </param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the provider is null.
+    /// </exception>
     public LoggerFactory(ILogConfigurationProvider provider)
     {
         _configuration = provider.Load();
     }
 
+    /// <summary>
+    /// Creates a new logger instance with the specified name
+    /// and attaches configured appenders.
+    /// </summary>
+    /// <param name="name">The name of the logger (e.g., class or namespace).</param>
+    /// <returns>A configured <see cref="ISmartLogger"/> instance.</returns>
     public ISmartLogger CreateLogger(string name)
     {
         var logger = new LoggerImplementation(
@@ -28,6 +48,12 @@ public class LoggerFactory
         return logger;
     }
 
+    /// <summary>
+    /// Resolves the effective log level for the specified logger name,
+    /// checking overrides before falling back to the root level.
+    /// </summary>
+    /// <param name="loggerName">The logger name to resolve.</param>
+    /// <returns>The effective <see cref="LogLevel"/>.</returns>
     private LogLevel ResolveLogLevel(string loggerName)
     {
         if (_configuration.LoggerOverrides.TryGetValue(loggerName, out var level))
@@ -36,6 +62,15 @@ public class LoggerFactory
         return _configuration.RootLogLevel;
     }
 
+    /// <summary>
+    /// Creates an appropriate <see cref="ILogAppender"/> instance
+    /// based on the provided configuration.
+    /// </summary>
+    /// <param name="config">The appender configuration.</param>
+    /// <returns>An initialized <see cref="ILogAppender"/>.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the destination type is not supported.
+    /// </exception>
     private ILogAppender CreateAppender(AppenderConfiguration config)
     {
         return config.Destination switch
@@ -59,6 +94,14 @@ public class LoggerFactory
         };
     }
 
+    /// <summary>
+    /// Atomically updates the active logging configuration.
+    /// Newly created loggers will use the updated configuration.
+    /// </summary>
+    /// <param name="newConfig">The new configuration to apply.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the new configuration is null.
+    /// </exception>
     public void UpdateConfiguration(LogConfigurationHolder newConfig)
     {
         if (newConfig == null)

@@ -18,17 +18,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore SmartLogger/SmartLogger.csproj
 
       - name: Build
-        run: dotnet build --configuration Release
+        run: dotnet build SmartLogger/SmartLogger.csproj --configuration Release --no-restore
 
       - name: Pack
-        run: dotnet pack SmartLogger/SmartLogger.csproj  \
-             --configuration Release \  
-             --no-build
+        run: dotnet pack SmartLogger/SmartLogger.csproj --configuration Release --no-build
 
       - name: Publish
-        run: dotnet nuget push **/*.nupkg \
-             --api-key ${{ secrets.NUGET_API_KEY }} \
-             --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push SmartLogger/bin/Release/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SmartLogger.Core\SmartLogger.csproj" />
+    <ProjectReference Include="..\SmartLogger\SmartLogger.csproj" />
   </ItemGroup>
 
 </Project>

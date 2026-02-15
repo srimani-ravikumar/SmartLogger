@@ -66,11 +66,12 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
 
         foreach (var appender in config.Appenders)
         {
-            if (string.IsNullOrWhiteSpace(appender.Type))
+            if (appender.Destination == LogOutputDestination.Unknown)
             {
                 throw new InvalidOperationException(
-                    "Appender type is required.");
+                    "Appender destination must be specified.");
             }
         }
     }
+
 }

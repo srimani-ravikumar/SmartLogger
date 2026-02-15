@@ -14,13 +14,13 @@ public class LoggerFactory
     public ISmartLogger CreateLogger(string name)
     {
         var logger = new LoggerImplementation(
-            name,
-            ResolveLogLevel(name),
+            name: name,
+            logLevel: ResolveLogLevel(name),
             enableDefaultAppender: false);
 
-        foreach (var appenderConfig in _configuration.Appenders)
+        foreach (AppenderConfiguration appenderConfig in _configuration.Appenders)
         {
-            var appender = CreateAppender(appenderConfig);
+            ILogAppender appender = CreateAppender(appenderConfig);
             logger.AddAppender(appender);
         }
 
@@ -37,13 +37,25 @@ public class LoggerFactory
 
     private ILogAppender CreateAppender(AppenderConfiguration config)
     {
-        return config.Type switch
+        return config.Destination switch
         {
-            "Console" => new ConsoleAppender(config.Threshold),
-            "File" => new FileAppender(
-                config.Settings["filePath"],
-                config.Threshold),
-            _ => throw new NotSupportedException()
+            LogOutputDestination.Console =>
+                new ConsoleAppender(config.Threshold),
+
+            LogOutputDestination.FileSystem =>
+                new FileAppender(
+                    config.Settings["filePath"],
+                    config.Threshold),
+
+            // ToDo
+            //LogOutputDestination.DatabaseSystem =>
+            //    new DatabaseAppender(
+            //        config.Settings["connectionString"],
+            //        config.Threshold),
+
+            _ => throw new NotSupportedException(
+                    $"Unsupported destination: {config.Destination}")
         };
     }
+
 }

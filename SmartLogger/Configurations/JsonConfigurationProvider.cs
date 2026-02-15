@@ -7,6 +7,8 @@ namespace SmartLogger.Configurations;
 public class JsonConfigurationProvider : ILogConfigurationProvider
 {
     private readonly string _filePath;
+    private FileSystemWatcher? _watcher;
+    private readonly object _reloadLock = new();
 
     public JsonConfigurationProvider(string filePath)
     {
@@ -70,6 +72,45 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
             {
                 throw new InvalidOperationException(
                     "Appender destination must be specified.");
+            }
+        }
+    }
+
+    public void EnableAutoReload()
+    {
+        string directory = Path.GetDirectoryName(_filePath)!;
+        string fileName = Path.GetFileName(_filePath);
+
+        _watcher = new FileSystemWatcher(directory, fileName)
+        {
+            NotifyFilter = NotifyFilters.LastWrite |
+                           NotifyFilters.Size |
+                           NotifyFilters.CreationTime
+        };
+
+        _watcher.Changed += OnConfigFileChanged;
+        _watcher.EnableRaisingEvents = true;
+    }
+
+    private void OnConfigFileChanged(object sender, FileSystemEventArgs e)
+    {
+        // FileSystemWatcher may fire multiple times
+        lock (_reloadLock)
+        {
+            try
+            {
+                // Small delay to avoid file lock issues
+                Thread.Sleep(100);
+
+                var newConfig = Load();
+
+                LoggerManager.Reload(this);
+
+                Console.WriteLine("[SmartLogger] Configuration reloaded successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SmartLogger] Failed to reload configuration: {ex.Message}");
             }
         }
     }

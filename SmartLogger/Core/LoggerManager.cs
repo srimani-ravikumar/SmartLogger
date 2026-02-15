@@ -16,6 +16,14 @@
 
             return _factory.CreateLogger(name);
         }
-    }
 
+        public static void Reload(ILogConfigurationProvider provider)
+        {
+            if (_factory is null)
+                throw new InvalidOperationException("LoggerManager is not initialized.");
+
+            LogConfigurationHolder newConfig = provider.Load();
+            _factory.UpdateConfiguration(newConfig);
+        }
+    }
 }

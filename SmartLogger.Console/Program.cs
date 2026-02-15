@@ -5,9 +5,11 @@ using SmartLogger.Filters;
 Console.WriteLine("=== Smart Logger Framework Demo ===");
 Console.WriteLine();
 
-DemoBasicLoggingWithJsonConfigProvider();
+//DemoBasicLoggingWithJsonConfigProvider();
 
-DemoBasicLoggingWithInMemoryConfigProvider();
+//DemoBasicLoggingWithInMemoryConfigProvider();
+
+DemoMultiThreadedLoggingWithJsonConfigProvider();
 
 Console.WriteLine();
 Console.WriteLine("=== Demo Completed ===");
@@ -21,9 +23,9 @@ void DemoBasicLoggingWithJsonConfigProvider()
     var path = Path.Combine(
     AppContext.BaseDirectory,
     "smartlogger.json");
-    ILogConfigurationProvider provider =
+    var provider =
         new JsonConfigurationProvider(path);
-
+    provider.EnableAutoReload();
 
     // 2. Register logger factory
     LoggerManager.Initialize(provider);
@@ -120,4 +122,51 @@ void DemoBasicLoggingWithInMemoryConfigProvider()
 
     logger.Info("This info message will NOT be displayed.");
     logger.Fatal("SYSTEM HALTED: Kernel panic detected.");
+}
+
+void DemoMultiThreadedLoggingWithJsonConfigProvider()
+{
+    Console.WriteLine("2. Multi-Threaded Logging Demo (JSON Provider)...");
+    Console.WriteLine("--------------------------------------------------");
+
+    // 1. Load JSON Configuration
+    var path = Path.Combine(
+        AppContext.BaseDirectory,
+        "smartlogger.json");
+
+    ILogConfigurationProvider provider =
+        new JsonConfigurationProvider(path);
+
+    // 2. Initialize Logger
+    LoggerManager.Initialize(provider);
+
+    ISmartLogger logger =
+        LoggerManager.GetLogger("MultiThreadDemo");
+
+    Console.WriteLine("Starting 5 concurrent threads...\n");
+
+    int threadCount = 5;
+    int logsPerThread = 10;
+
+    var tasks = new List<Task>();
+
+    for (int i = 0; i < threadCount; i++)
+    {
+        int threadId = i;
+
+        tasks.Add(Task.Run(() =>
+        {
+            for (int j = 0; j < logsPerThread; j++)
+            {
+                logger.Info(
+                    $"Thread-{threadId} | Message-{j} | Executing on ThreadId={Thread.CurrentThread.ManagedThreadId}");
+
+                Thread.Sleep(20); // Simulate work
+            }
+        }));
+    }
+
+    Task.WaitAll(tasks.ToArray());
+
+    Console.WriteLine("\nAll threads completed.");
 }

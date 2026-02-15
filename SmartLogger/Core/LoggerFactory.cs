@@ -4,7 +4,7 @@ namespace SmartLogger.Core;
 
 public class LoggerFactory
 {
-    private readonly LogConfigurationHolder _configuration;
+    private volatile LogConfigurationHolder _configuration;
 
     public LoggerFactory(ILogConfigurationProvider provider)
     {
@@ -58,4 +58,11 @@ public class LoggerFactory
         };
     }
 
+    public void UpdateConfiguration(LogConfigurationHolder newConfig)
+    {
+        if (newConfig == null)
+            throw new ArgumentNullException(nameof(newConfig));
+
+        _configuration = newConfig; // atomic reference swap
+    }
 }

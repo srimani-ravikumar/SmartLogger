@@ -1,16 +1,42 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
 
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    
+
     <PackageId>SmartLogger</PackageId>
     <Version>1.0.3</Version>
     <Authors>Srimani</Authors>
-    <Description>Extensible logging framework</Description>
-    <PackageTags>logger;logging;loggingframework</PackageTags>
-    <RepositoryUrl>https://github.com/srimani-ravikumar/SmartLogger.git</RepositoryUrl>
+
+    <Description>
+      SmartLogger is a production-focused, extensible logging framework for .NET
+      with support for structured logging, correlation context, runtime configuration reload,
+      and multi-destination output. Designed with concurrency safety and system resilience in mind.
+    </Description>
+
+    <PackageTags>
+      logging;logger;dotnet;observability;correlation-id;structured-logging;
+      runtime-configuration;thread-safe;async;diagnostics;monitoring
+    </PackageTags>
+
+    <RepositoryUrl>https://github.com/srimani-ravikumar/SmartLogger</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/srimani-ravikumar/SmartLogger</PackageProjectUrl>
+
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <PackageIcon>icon.png</PackageIcon>
+
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="assets\icon.png" Pack="true" PackagePath="\" />
+
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
 </Project>

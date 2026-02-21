@@ -1,60 +1,72 @@
 ﻿# SmartLogger
 
-### A Production-Focused Logging Framework Designed for Reliability and Observability
+### A System Design–Driven Logging Framework Built as a Learning Exploration
 
-> I've studied mature logging frameworks like Serilogs and intentionally designed around their **known production trade-offs**.
+> After studying mature logging frameworks and their real-world trade-offs, I built SmartLogger as a personal system design exercise to understand how production logging systems are engineered.
 
 ---
 
 ## Why This Project?
 
-SmartLogger is **not intended to replace existing logging framework**.
-It is a focused design exercise that applies production-level thinking to a foundational infrastructure component.
+SmartLogger was built as a **learning project focused on system design**, not as a replacement for existing logging frameworks.
+
+While studying established libraries, I became interested in:
+
+* How logging behaves under concurrency
+* How configuration updates are handled safely
+* How overload is controlled
+* How failures inside logging systems are detected
+* How correlation works in distributed systems
+
+SmartLogger is my attempt to design and implement those concepts from first principles.
 
 ---
 
-## Usual logging framework addresses
+## What I Focused On
 
-Based on the defined functional requirements, SmartLogger focuses on:
+Instead of feature completeness, I focused on architectural thinking:
 
-* Controlled log severity using a priority-based level system
+* Priority-based log level system
 * Structured log messages with correlation support
 * Multiple independent output destinations
-* Runtime configuration without application restarts
-* Safe behavior under multi-threaded and high-load conditions
+* Runtime configuration reload
+* Safe behavior under multi-threaded execution
 
-The framework is designed to **protect the application first**, even when logging itself is under stress.
-
----
-
-## Problems that were addressed explicitly by SmartLogger
-
-SmartLogger intentionally includes:
-
-* **First-class correlation context** to trace requests across threads and asynchronous execution
-* **Overload protection with log drop strategies** to prevent memory growth and performance degradation
-* **Logging health visibility** to detect sink failures, dropped logs, and pipeline degradation
-
-These concerns are built into the core design, not added as extensions.
+The design intentionally prioritizes **application safety over logging completeness**.
 
 ---
 
-## What are the By-Products of this System Design
+## Pain Points Explored
 
-This project demonstrates practical system design skills such as:
+While analyzing existing frameworks, I wanted to better understand how systems handle:
 
-* Thread-safe concurrent processing
+* Correlation context propagation across async flows
+* Log overload and memory protection strategies
+* Runtime configuration updates without restarts
+* Visibility into logging system health
+
+SmartLogger explores these concerns directly in its core design.
+
+---
+
+## What This Project Helped Me Learn
+
+Building this framework deepened my understanding of:
+
+* Thread safety and memory visibility
 * Backpressure and load-shedding strategies
+* Atomic configuration replacement
 * Fault isolation between components
-* Bounded resource usage
-* Observability of internal system health
+* Observability-driven design
 
-These are the same principles applied in production backend and distributed systems.
+These are the same principles used in real production backend systems.
 
 ---
 
-## In essence on what I gathered after designed this system
+## Final Thought
 
-**SmartLogger demonstrates how careful system design decisions shape reliability, performance, and observability. Even in something as common as logging.**
+SmartLogger is not about reinventing logging.
+
+It is about understanding how infrastructure systems behave under real-world constraints — and applying system design thinking even to foundational components.
 
 ---

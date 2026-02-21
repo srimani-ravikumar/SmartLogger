@@ -59,7 +59,7 @@ Each destination operates independently.
 SmartLogger allows request-level tracing:
 
 ```csharp
-LoggerImplementation.SetCorrelationId("REQ-12345");
+_logger.SetCorrelationId("REQ-12345");
 ```
 
 All logs generated within that execution flow automatically include the correlation ID, making troubleshooting significantly easier.

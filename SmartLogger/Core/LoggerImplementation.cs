@@ -9,7 +9,7 @@ namespace SmartLogger.Core;
 /// Core implementation of the <see cref="ISmartLogger"/> interface.
 /// Handles the lifecycle of log messages, filtering, and distribution to appenders.
 /// </summary>
-public class LoggerImplementation : ISmartLogger
+internal sealed class LoggerImplementation : ISmartLogger
 {
     private readonly string _name;
     private readonly List<ILogAppender> _appenders;

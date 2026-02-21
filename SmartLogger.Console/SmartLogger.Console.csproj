@@ -13,7 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SmartLogger" Version="1.0.3" />
+    <ProjectReference Include="..\SmartLogger\SmartLogger.csproj" />
   </ItemGroup>
+
+  <!--<ItemGroup>
+    <PackageReference Include="SmartLogger" Version="1.0.3" />
+  </ItemGroup>-->
 
 </Project>

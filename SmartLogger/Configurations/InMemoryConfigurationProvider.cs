@@ -9,7 +9,7 @@ namespace SmartLogger.Configurations;
 /// Provides SmartLogger configuration from an in-memory
 /// configuration object. Useful for testing or programmatic setup.
 /// </summary>
-public class InMemoryConfigurationProvider : ILogConfigurationProvider
+public sealed class InMemoryConfigurationProvider : ILogConfigurationProvider
 {
     private readonly LogConfigurationHolder _configuration;
 
@@ -34,24 +34,6 @@ public class InMemoryConfigurationProvider : ILogConfigurationProvider
         return _configuration;
     }
 
-    private static void Validate(LogConfigurationHolder config)
-    {
-        if (config.Appenders is null || !config.Appenders.Any())
-        {
-            throw new InvalidOperationException(
-                "At least one appender must be configured.");
-        }
-
-        foreach (var appender in config.Appenders)
-        {
-            if (appender.Destination == LogOutputDestination.Unknown)
-            {
-                throw new InvalidOperationException(
-                    "Appender destination must be specified.");
-            }
-        }
-    }
-
     /// <summary>
     ///  Optional helper factory method for quick setup
     /// </summary>
@@ -71,5 +53,23 @@ public class InMemoryConfigurationProvider : ILogConfigurationProvider
         };
 
         return new InMemoryConfigurationProvider(config);
+    }
+
+    private static void Validate(LogConfigurationHolder config)
+    {
+        if (config.Appenders is null || !config.Appenders.Any())
+        {
+            throw new InvalidOperationException(
+                "At least one appender must be configured.");
+        }
+
+        foreach (var appender in config.Appenders)
+        {
+            if (appender.Destination == LogOutputDestination.Unknown)
+            {
+                throw new InvalidOperationException(
+                    "Appender destination must be specified.");
+            }
+        }
     }
 }

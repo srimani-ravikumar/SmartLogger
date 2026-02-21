@@ -8,7 +8,7 @@ namespace SmartLogger.Appenders;
 /// <summary>
 /// Appends log messages to a file in append mode.
 /// </summary>
-public class FileAppender : ILogAppender
+internal sealed class FileAppender : ILogAppender
 {
     private readonly string _filePath;
     private LogLevel _logLevel;

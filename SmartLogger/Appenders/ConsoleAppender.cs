@@ -7,7 +7,7 @@ namespace SmartLogger.Appenders;
 /// <summary>
 /// Appends log messages to the standard console output or error stream.
 /// </summary>
-internal class ConsoleAppender : ILogAppender
+internal sealed class ConsoleAppender : ILogAppender
 {
     // Threshold and Formatter are volatile or read-only references to ensure 
     // thread-safety when they are updated via Setters.
@@ -15,9 +15,9 @@ internal class ConsoleAppender : ILogAppender
     private ILogFormatter _formatter;
     private readonly object _lockObject = new();
 
-    public ConsoleAppender() : this(LogLevel.DEBUG) { }
+    internal ConsoleAppender() : this(LogLevel.DEBUG) { }
 
-    public ConsoleAppender(LogLevel logLevel)
+    internal ConsoleAppender(LogLevel logLevel)
     {
         _logLevel = logLevel;
         _formatter = new DetailedFormatter();

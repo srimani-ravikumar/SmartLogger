@@ -20,12 +20,8 @@ void DemoBasicLoggingWithJsonConfigProvider()
     Console.WriteLine("-----------------------------------");
 
     // 1. Create configuration provider
-    var path = Path.Combine(
-    AppContext.BaseDirectory,
-    "smartlogger.json");
-    var provider =
-        new JsonConfigurationProvider(path);
-    provider.EnableAutoReload();
+    var path = Path.Combine(AppContext.BaseDirectory, "smartlogger.json");
+    ILogConfigurationProvider provider = new JsonConfigurationProvider(filePath: path, enableAutoReload: true);
 
     // 2. Register logger factory
     LoggerManager.Initialize(provider);
@@ -135,7 +131,7 @@ void DemoMultiThreadedLoggingWithJsonConfigProvider()
         "smartlogger.json");
 
     ILogConfigurationProvider provider =
-        new JsonConfigurationProvider(path);
+        new JsonConfigurationProvider(filePath: path, enableAutoReload: true);
 
     // 2. Initialize Logger
     LoggerManager.Initialize(provider);

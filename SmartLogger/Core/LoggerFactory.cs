@@ -1,5 +1,6 @@
 ﻿using SmartLogger.Appenders;
 using System;
+using System.Collections.Concurrent;
 
 namespace SmartLogger.Core;
 
@@ -7,9 +8,16 @@ namespace SmartLogger.Core;
 /// Responsible for creating configured <see cref="ISmartLogger"/> instances
 /// based on the active <see cref="LogConfigurationHolder"/>.
 /// </summary>
-public class LoggerFactory
+internal class LoggerFactory
 {
+    /* Marked as volatile to ensure that configuration updates made by one thread
+    ** are immediately visible to all other threads without caching.
+    ** Since configuration is replaced atomically via reference swap,
+    ** volatile guarantees memory visibility while avoiding locks.
+    */
     private volatile LogConfigurationHolder _configuration;
+
+    private readonly ConcurrentDictionary<string, ISmartLogger> _loggers = new();
 
     /// <summary>
     /// Initializes a new instance of <see cref="LoggerFactory"/>
@@ -21,31 +29,60 @@ public class LoggerFactory
     /// <exception cref="ArgumentNullException">
     /// Thrown when the provider is null.
     /// </exception>
-    public LoggerFactory(ILogConfigurationProvider provider)
+    internal LoggerFactory(ILogConfigurationProvider provider)
     {
         _configuration = provider.Load();
     }
 
     /// <summary>
-    /// Creates a new logger instance with the specified name
-    /// and attaches configured appenders.
+    /// Retrieves an existing logger from the cache or creates, configures, 
+    /// and registers a new one if it does not exist.
     /// </summary>
     /// <param name="name">The name of the logger (e.g., class or namespace).</param>
     /// <returns>A configured <see cref="ISmartLogger"/> instance.</returns>
-    public ISmartLogger CreateLogger(string name)
+    internal ISmartLogger GetOrCreateLogger(string name)
     {
-        var logger = new LoggerImplementation(
-            name: name,
-            logLevel: ResolveLogLevel(name),
-            enableDefaultAppender: false);
-
-        foreach (AppenderConfiguration appenderConfig in _configuration.Appenders)
+        // Here "GetOrAdd" to ensure thread-safe access to the logger cache.
+        // The factory lambda only executes if the logger doesn't already exist.
+        ISmartLogger instance = _loggers.GetOrAdd(name, loggerName =>
         {
-            ILogAppender appender = CreateAppender(appenderConfig);
-            logger.AddAppender(appender);
-        }
+            // 1. Determine the log level based on the name (e.g., namespace overrides)
+            LogLevel initialLevel = ResolveLogLevel(loggerName);
 
-        return logger;
+            // 2. Instantiate the implementation
+            // We disable the default appender because we are manually attaching them from config
+            var logger = new LoggerImplementation(
+                name: loggerName,
+                logLevel: initialLevel,
+                enableDefaultAppender: false);
+
+            // 3. Populate the logger with appenders defined in the current configuration
+            foreach (var appenderConfig in _configuration.Appenders)
+            {
+                var appender = CreateAppender(appenderConfig);
+                logger.AddAppender(appender);
+            }
+
+            return logger;
+        });
+
+        return instance;
+    }
+
+    /// <summary>
+    /// Atomically updates the active logging configuration.
+    /// Newly created loggers will use the updated configuration.
+    /// </summary>
+    /// <param name="newConfig">The new configuration to apply.</param>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when the new configuration is null.
+    /// </exception>
+    internal void UpdateConfiguration(LogConfigurationHolder newConfig)
+    {
+        if (newConfig == null)
+            throw new ArgumentNullException(nameof(newConfig));
+
+        _configuration = newConfig; // atomic reference swap
     }
 
     /// <summary>
@@ -92,21 +129,5 @@ public class LoggerFactory
             _ => throw new NotSupportedException(
                     $"Unsupported destination: {config.Destination}")
         };
-    }
-
-    /// <summary>
-    /// Atomically updates the active logging configuration.
-    /// Newly created loggers will use the updated configuration.
-    /// </summary>
-    /// <param name="newConfig">The new configuration to apply.</param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when the new configuration is null.
-    /// </exception>
-    public void UpdateConfiguration(LogConfigurationHolder newConfig)
-    {
-        if (newConfig == null)
-            throw new ArgumentNullException(nameof(newConfig));
-
-        _configuration = newConfig; // atomic reference swap
     }
 }

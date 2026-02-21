@@ -40,7 +40,7 @@ namespace SmartLogger.Core
             if (_factory is null)
                 throw new InvalidOperationException("LoggerManager is not initialized.");
 
-            return _factory.CreateLogger(name);
+            return _factory.GetOrCreateLogger(name);
         }
 
         /// <summary>

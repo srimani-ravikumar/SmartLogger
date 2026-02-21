@@ -13,7 +13,7 @@ namespace SmartLogger.Configurations;
 /// and optionally supports real-time auto-reloading
 /// when the file changes.
 /// </summary>
-public class JsonConfigurationProvider : ILogConfigurationProvider
+public sealed class JsonConfigurationProvider : ILogConfigurationProvider
 {
     private readonly string _filePath;
     private FileSystemWatcher _watcher;
@@ -24,21 +24,29 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
     /// with the specified configuration file path.
     /// </summary>
     /// <param name="filePath">Relative or absolute path to the JSON configuration file.</param>
+    /// <param name="enableAutoReload">Determines the configuration change nature</param>
     /// <exception cref="ArgumentNullException">
     /// Thrown when the file path is null or empty.
     /// </exception>
-    public JsonConfigurationProvider(string filePath)
+    public JsonConfigurationProvider(string filePath, bool enableAutoReload)
     {
         if (string.IsNullOrWhiteSpace(filePath))
-        {
-            throw new ArgumentNullException(nameof(filePath));
-        }
+            throw new ArgumentNullException("Invalid file path provided!");
+
 
         if (Path.IsPathRooted(filePath))
             _filePath = filePath;
         else
             _filePath = Path.Combine(AppContext.BaseDirectory, filePath);
 
+        if (enableAutoReload)
+            EnableAutoReload();
+
+    }
+
+    // Making it private to mandate providing filepath during construction
+    private JsonConfigurationProvider()
+    {
     }
 
     /// <inheritdoc/>
@@ -98,7 +106,7 @@ public class JsonConfigurationProvider : ILogConfigurationProvider
     /// Enables automatic reloading of the configuration
     /// when the underlying JSON file changes.
     /// </summary>
-    public void EnableAutoReload()
+    private void EnableAutoReload()
     {
         string directory = Path.GetDirectoryName(_filePath)!;
         string fileName = Path.GetFileName(_filePath);

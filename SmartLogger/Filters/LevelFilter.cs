@@ -5,7 +5,7 @@ namespace SmartLogger.Filters;
 /// <summary>
 /// A filter that allows or denies log messages based on their <see cref="LogLevel"/>.
 /// </summary>
-public class LevelFilter : ILogFilter
+public sealed class LevelFilter : ILogFilter
 {
     private LogLevel _logLevel;
 

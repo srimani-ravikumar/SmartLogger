@@ -9,7 +9,7 @@
     <Version>1.0.3</Version>
     <Authors>Srimani</Authors>
     <Description>Extensible logging framework</Description>
-    <PackageTags>logging;dotnet;logger</PackageTags>
+    <PackageTags>logger;logging;loggingframework</PackageTags>
     <RepositoryUrl>https://github.com/srimani-ravikumar/SmartLogger.git</RepositoryUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>

@@ -6,7 +6,7 @@ namespace SmartLogger.Core
     /// Holds the complete logging configuration
     /// including root level, logger overrides, and appenders.
     /// </summary>
-    public class LogConfigurationHolder
+    public sealed class LogConfigurationHolder
     {
         // Smart loggers default level will always be INFO
 
@@ -33,7 +33,7 @@ namespace SmartLogger.Core
     /// <summary>
     /// Represents configuration settings for a specific log output destination.
     /// </summary>
-    public class AppenderConfiguration
+    public sealed class AppenderConfiguration
     {
         /// <summary>
         /// Gets or sets the destination type

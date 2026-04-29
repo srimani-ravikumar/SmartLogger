@@ -27,7 +27,7 @@ void DemoBasicLoggingWithJsonConfigProvider()
     LoggerManager.Initialize(provider);
 
     // 3. Get logger
-    ISmartLogger logger = LoggerManager.GetLogger("Program");
+    ISmartLogger logger = LoggerManager.GetLogger(nameof(Program));
 
     // 2. Set a Correlation ID for the current request context
     // LoggerImplementation.SetCorrelationId("REQ-550E");

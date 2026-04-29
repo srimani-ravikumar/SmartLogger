@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="SmartLogger/SmartLogger.csproj" />
-  <Project Path="SmartLogger.Console/SmartLogger.Console.csproj" />
-</Solution>

@@ -7,7 +7,13 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <PackageId>SmartLogger</PackageId>
-    <Version>1.0.6</Version>
+    
+    <!-- 
+      Default version for local builds.
+      In CI/CD, this value is overridden by the Git tag (via /p:Version).
+    -->
+    <Version Condition="'$(Version)' == ''">0.0.0-dev</Version>
+    
     <Authors>Srimani</Authors>
 
     <Description>
@@ -27,14 +33,14 @@
 
     <PackageIcon>Icon.png</PackageIcon>
 
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-
+    <PackageReadmeFile>docs/package-readme.md</PackageReadmeFile>
+    
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="Assets/Icon.png" Pack="true" PackagePath="\" />
 
-    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="../../docs/package-readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

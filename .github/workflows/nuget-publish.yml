@@ -1,0 +1,50 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*' 
+      # Trigger only when a version tag like v1.0.0 is pushed
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # Pulls your repository code into the runner
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+        # Installs .NET SDK required to build and pack the project
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        # Extracts version (e.g., v1.0.0 → 1.0.0) from the git tag
+
+      - name: Restore
+        run: dotnet restore
+        # Restores all NuGet dependencies
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+        # Builds the project in Release mode (no restore since already done)
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+        # Runs tests to ensure build is valid before publishing
+
+      - name: Pack
+        run: dotnet pack src/SmartLogger/SmartLogger.csproj --configuration Release --no-build /p:PackageVersion=${{ steps.version.outputs.VERSION }} /p:Version=${{ steps.version.outputs.VERSION }} /p:AssemblyVersion=${{ steps.version.outputs.VERSION }} /p:FileVersion=${{ steps.version.outputs.VERSION }}
+        # Uses version from Git tag to ensure:
+        # - NuGet package version (PackageVersion)
+        # - Assembly version (Version / AssemblyVersion / FileVersion)
+        # are all consistent and not hardcoded in the project file
+
+      - name: Publish to NuGet
+        run: dotnet nuget push "src/SmartLogger/bin/Release/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        # Publishes package to NuGet; skips if version already exists

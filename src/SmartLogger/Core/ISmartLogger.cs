@@ -13,9 +13,9 @@ public interface ISmartLogger
     /// <summary>
     /// Processes a log entry at the specified <see cref="LogLevel"/>.
     /// </summary>
-    /// <param name="level">The severity level of the message.</param>
+    /// <param name="logLevel">The severity level of the message.</param>
     /// <param name="message">The text content to be logged.</param>
-    void Log(LogLevel level, string message);
+    void Log(LogLevel logLevel, string message);
 
     /// <summary>Logs a message at the <see cref="LogLevel.DEBUG"/> level for detailed diagnostic information.</summary>
     /// <param name="message">The diagnostic message.</param>
@@ -40,8 +40,8 @@ public interface ISmartLogger
     /// <summary>
     /// Updates the minimum <see cref="LogLevel"/> required for messages to be processed.
     /// </summary>
-    /// <param name="level">The new minimum threshold level.</param>
-    void SetLogLevel(LogLevel level);
+    /// <param name="logLevel">The new minimum threshold level.</param>
+    void SetLogLevel(LogLevel logLevel);
 
     /// <summary>
     /// Attaches an output destination (appender) to the logger.

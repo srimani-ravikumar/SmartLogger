@@ -41,10 +41,10 @@ public static class LogLevelExtensions
     /// Checks if this level is greater than or equal to the other level.
     /// </summary>
     /// <param name="current">The level being checked.</param>
-    /// <param name="other">The level to compare against.</param>
-    /// <returns>True if the current priority is >= the other priority.</returns>
-    public static bool IsGreaterOrEqual(this LogLevel current, LogLevel other)
+    /// <param name="threshold">The level to compare against.</param>
+    /// <returns>True if the current priority is >= the threshold priority.</returns>
+    public static bool IsGreaterOrEqual(this LogLevel current, LogLevel threshold)
     {
-        return (int)current >= (int)other;
+        return (int)current >= (int)threshold;
     }
 }

@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 namespace SmartLogger.Core;
 
 /// <summary>
-/// Responsible for creating configured <see cref="ISmartLogger"/> instances
+/// "Simple Factory" responsible for creating and caching <see cref="ISmartLogger"/> instances 
 /// based on the active <see cref="LogConfigurationHolder"/>.
 /// </summary>
 internal class LoggerFactory
@@ -17,6 +17,7 @@ internal class LoggerFactory
     */
     private volatile LogConfigurationHolder _configuration;
 
+    // Going with ConcurrentDictionary for thread-safe caching of loggers by name.
     private readonly ConcurrentDictionary<string, ISmartLogger> _loggers = new();
 
     /// <summary>
@@ -54,7 +55,7 @@ internal class LoggerFactory
             var logger = new LoggerImplementation(
                 name: loggerName,
                 logLevel: initialLevel,
-                enableDefaultAppender: false);
+                enableDefaultConsoleAppender: _configuration.EnableDefaultConsoleAppender);
 
             // 3. Populate the logger with appenders defined in the current configuration
             foreach (var appenderConfig in _configuration.Appenders)

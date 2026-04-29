@@ -27,15 +27,15 @@ jobs:
         # Extracts version (e.g., v1.0.0 → 1.0.0) from the git tag
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore src/SmartLogger.sln
         # Restores all NuGet dependencies
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build src/SmartLogger.sln --configuration Release --no-restore
         # Builds the project in Release mode (no restore since already done)
 
       - name: Test
-        run: dotnet test --no-build --verbosity normal
+        run: dotnet test src/SmartLogger.sln --no-build --verbosity normal
         # Runs tests to ensure build is valid before publishing
 
       - name: Pack

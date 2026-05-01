@@ -22,7 +22,7 @@ namespace SmartLogger.Core;
 /// keep logging concerns and execution context concerns decoupled.
 /// </para>
 /// </summary>
-internal static class LogContext
+public static class LogContext
 {
     // AsyncLocal ensures the CorrelationId is unique per execution flow (not per thread)
     private static readonly AsyncLocal<string?> _correlationId = new();

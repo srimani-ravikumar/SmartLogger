@@ -1,4 +1,6 @@
 ﻿using SmartLogger.Appenders;
+using SmartLogger.Appenders.FileRolling;
+using SmartLogger.Formatters;
 using System;
 using System.Collections.Concurrent;
 
@@ -111,15 +113,20 @@ internal class LoggerFactory
     /// </exception>
     private ILogAppender CreateAppender(AppenderConfiguration config)
     {
+        // TODO: Validate only for FileSytem and not here - it should go under configuration provider
+        // var fileConfig = config.File ?? throw new InvalidOperationException("File configuration required");
+
         return config.Destination switch
         {
             LogOutputDestination.Console =>
-                new ConsoleAppender(config.Threshold),
+                new ConsoleAppender(config.Threshold, FormatterFactory.Create(config)),
 
             LogOutputDestination.FileSystem =>
                 new FileAppender(
-                    config.Settings["filePath"],
-                    config.Threshold),
+                    config.File,
+                    config.Threshold,
+                    FormatterFactory.Create(config),
+                    RollingFactory.Create(config.File)),
 
             // ToDo
             //LogOutputDestination.DatabaseSystem =>

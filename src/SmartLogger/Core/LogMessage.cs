@@ -35,7 +35,7 @@ public class LogMessage
     /// <summary>
     /// Gets the unique ID used to trace requests across services, if applicable.
     /// </summary>
-    public string? CorrelationId { get; init; }
+    public string CorrelationId { get; init; }
 
     private LogMessage(Builder builder)
     {
@@ -57,7 +57,7 @@ public class LogMessage
         internal string InternalMessage { get; private set; } = string.Empty;
         internal string InternalSource { get; private set; } = "System";
         internal int InternalThreadId { get; private set; } = Environment.CurrentManagedThreadId;
-        internal string? InternalCorrelationId { get; private set; }
+        internal string InternalCorrelationId { get; private set; }
 
         /// <summary>
         /// Sets the log level.

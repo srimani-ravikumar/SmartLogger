@@ -24,10 +24,10 @@ public interface ILogAppender
     bool IsEnabled(LogLevel logLevel);
 
     /// <summary>Sets the formatter used to stringify log messages.</summary>
-    /// <param name="formatter">An implementation of <see cref="ILogFormatter"/>.</param>
-    void SetFormatter(ILogFormatter formatter);
+    /// <param name="formatter">An implementation of <see cref="ILogOutputFormatterStrategy"/>.</param>
+    void SetFormatter(ILogOutputFormatterStrategy formatter);
 
     /// <summary>Gets the currently assigned formatter.</summary>
-    /// <returns>The <see cref="ILogFormatter"/> instance.</returns>
-    ILogFormatter GetFormatter();
+    /// <returns>The <see cref="ILogOutputFormatterStrategy"/> instance.</returns>
+    ILogOutputFormatterStrategy GetFormatter();
 }

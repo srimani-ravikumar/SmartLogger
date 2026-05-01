@@ -7,9 +7,11 @@ Console.WriteLine();
 
 DemoBasicLoggingWithJsonConfigProvider();
 
-DemoBasicLoggingWithInMemoryConfigProvider();
+// DemoBasicLoggingWithInMemoryConfigProvider();
 
 DemoMultiThreadedLoggingWithJsonConfigProvider();
+
+DemoLogWithCorrelationId();
 
 Console.WriteLine();
 Console.WriteLine("=== Demo Completed ===");
@@ -76,9 +78,17 @@ void DemoBasicLoggingWithInMemoryConfigProvider()
         {
             Destination = LogOutputDestination.FileSystem,
             Threshold = LogLevel.INFO,
-            Settings = new Dictionary<string, string>
+            File = new FileConfiguration
             {
-                { "filePath", "logs/app.log" }
+                BasePath = "logs/app",
+                Extension = "log",
+                Naming = new FileNamingConfiguration
+                {
+                    DateFormat = "yyyy-MM-dd",
+                    IncludeDate = true,
+                    IncludeIndex = true,
+                    Separator = "_"
+                }
             }
         }
     }
@@ -165,4 +175,26 @@ void DemoMultiThreadedLoggingWithJsonConfigProvider()
     Task.WaitAll(tasks.ToArray());
 
     Console.WriteLine("\nAll threads completed.");
+}
+
+void DemoLogWithCorrelationId()
+{
+    Console.WriteLine("4. Log with Correlation Id...");
+    Console.WriteLine("-----------------------------------");
+
+    // 1. Initialize the Logger with configurations
+    var path = Path.Combine(AppContext.BaseDirectory, "smartlogger.json");
+    ILogConfigurationProvider provider = new JsonConfigurationProvider(filePath: path, enableAutoReload: true);
+    LoggerManager.Initialize(provider);
+
+    // 2. Get the logger from Log Manager
+    ISmartLogger logger = LoggerManager.GetLogger("ForCorreleationId");
+
+    // 3. Log a message along with Correlation id
+    using(LogContext.BeginCorrelationScope("CID-123"))
+    {
+        logger.Info("Payment started");
+        logger.Error("Payment failed");
+    }
+
 }

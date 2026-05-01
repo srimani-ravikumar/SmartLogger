@@ -83,7 +83,7 @@ public static class LoggerManager
     /// <exception cref="InvalidOperationException">
     /// Thrown when the LoggerFactory has not been initialized.
     /// </exception>
-    public static void Reload(ILogConfigurationProvider provider)
+    public static void ReloadConfiguration(ILogConfigurationProvider provider)
     {
         if (_factory is null)
             throw new InvalidOperationException("LoggerFactory is not initialized.");

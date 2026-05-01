@@ -174,13 +174,15 @@ public sealed class JsonConfigurationProvider : ILogConfigurationProvider
 
                 var newConfig = Load();
 
-                LoggerManager.Reload(this);
+                LoggerManager.ReloadConfiguration(this);
 
-                Console.WriteLine("[SmartLogger] Configuration reloaded successfully.");
+                // Console.WriteLine("[SmartLogger] Configuration reloaded successfully.");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[SmartLogger] Failed to reload configuration: {ex.Message}");
+                // TO BE REVISITED
+                throw;
+                // Console.WriteLine($"[SmartLogger] Failed to reload configuration: {ex.Message}");
             }
         }
     }

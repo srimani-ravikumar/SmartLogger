@@ -34,13 +34,13 @@ public sealed class LogConfigurationHolder
     /// <summary>
     /// Set to true to enable a default console appender when no appenders are configured.
     /// </summary>
-    public bool EnableDefaultConsoleAppender 
-    { 
-        get     
-        { 
-            return Appenders is null || Appenders.Count == 0; 
-        } 
-    } 
+    public bool EnableDefaultConsoleAppender
+    {
+        get
+        {
+            return Appenders is null || Appenders.Count == 0;
+        }
+    }
 }
 
 /// <summary>
@@ -58,13 +58,86 @@ public sealed class AppenderConfiguration
     /// Gets or sets the minimum log level required
     /// for this appender to process a message.
     /// </summary>
-    public LogLevel Threshold { get; set; } = LogLevel.DEBUG;
+    public LogLevel Threshold { get; set; } = LogLevel.INFO;
+
+    public FileConfiguration File { get; set; }
+
+    public LogOutputFormat OutputFormat { get; set; } = LogOutputFormat.PlainText;
+
+    public LogMessageLayoutType LayoutType { get; set; } = LogMessageLayoutType.Simple;
+
+    public string Pattern { get; set; } = string.Empty;
+
+    // be default the system should allow all fields
+    public List<string> JsonFields { get; set; } = new() { "timestamp", "level", "thread", "correlation", "source", "message" };
+
+    // optional: to configured the json property name
+    public Dictionary<string, string> JsonFieldMapping { get; set; } = new();
+}
+
+public sealed class FileConfiguration
+{
+    /// <summary>
+    /// Base path without extension or suffix.
+    /// Example: logs/app
+    /// </summary>
+    public string BasePath { get; set; } = "logs/app";
 
     /// <summary>
-    /// Gets or sets additional key-value configuration settings
-    /// specific to the destination (e.g., filePath, maxSizeMB).
+    /// File extension (without dot).
+    /// Example: log, txt, json
     /// </summary>
-    public Dictionary<string, string> Settings { get; set; } = new(); // filePath, maxSizeMB, etc.
+    public string Extension { get; set; } = "log";
+
+    /// <summary>
+    /// Controls how file names are constructed.
+    /// </summary>
+    public FileNamingConfiguration Naming { get; set; } = new();
+
+    /// <summary>
+    /// Rolling policy for file rotation.
+    /// </summary>
+    public RollingPolicyConfiguration RollingPolicy { get; set; } = new();
+}
+
+public sealed class FileNamingConfiguration
+{
+    /// <summary>
+    /// Whether to include date in file name.
+    /// </summary>
+    public bool IncludeDate { get; set; } = true;
+
+    /// <summary>
+    /// Date format used when IncludeDate is true.
+    /// </summary>
+    public string DateFormat { get; set; } = "yyyy-MM-dd";
+
+    /// <summary>
+    /// Whether to include rolling index.
+    /// </summary>
+    public bool IncludeIndex { get; set; } = true;
+
+    /// <summary>
+    /// Separator between parts.
+    /// Example: "-", "_"
+    /// </summary>
+    public string Separator { get; set; } = "-";
+}
+
+public sealed class RollingPolicyConfiguration
+{
+    public RollingType RollingType { get; set; } = RollingType.None;
+
+    // Size-based (in MB), defaults to 10 mb
+    public long MaxFileSizeMB { get; set; } = 10;
+
+    // Time-based, defaults to None
+    public RollingInterval Interval { get; set; } = RollingInterval.None;
+
+    // Max retained files, default to seven
+    public int MaxRetainedFiles { get; set; } = 7;
+
+    public string DateFormat { get; set; } = "yyyy-MM-dd";
 }
 
 /// <summary>
@@ -91,4 +164,63 @@ public enum LogOutputDestination
     /// Writes log output to a database system.
     /// </summary>
     DatabaseSystem = 3
+}
+
+/// <summary>
+/// Defines the supported log output formats for log messages.
+/// </summary>
+public enum LogOutputFormat
+{
+    /// <summary>
+    /// Output log messages in plain text format.
+    /// </summary>
+    PlainText = 0,
+
+    /// <summary>
+    /// Output log messages in JSON format. (recommended for modern systems)
+    /// </summary>
+    Json = 1,
+
+    /// <summary>
+    /// Output log messages in XML format. (to support legacy systems)
+    /// </summary>
+    Xml = 3
+}
+
+/// <summary>
+/// Defines the supported log message layout types that determine
+/// how log messages are formatted and presented.
+/// </summary>
+public enum LogMessageLayoutType
+{
+    /// <summary>
+    /// Represents a simple layout type with information such as timestamp, log level, and message.
+    /// </summary>
+    Simple,
+
+    /// <summary>
+    /// Represents a detailed layout with additional context such as thread information, correlation context and more.
+    /// </summary>
+    Detailed,
+
+    /// <summary>
+    /// Represents a custom layout defined by the user via a pattern string (e.g., "%date [%level] %message").
+    /// </summary>
+    Custom
+}
+
+public enum RollingType
+{
+    None,
+    Size,
+    Time,
+    Hybrid // TODO
+}
+
+public enum RollingInterval
+{
+    None,
+    Hour,
+    Day,
+    Month
 }

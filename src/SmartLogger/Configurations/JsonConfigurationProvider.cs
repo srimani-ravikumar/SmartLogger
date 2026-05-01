@@ -1,5 +1,6 @@
 ﻿using SmartLogger.Core;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -79,6 +80,7 @@ public sealed class JsonConfigurationProvider : ILogConfigurationProvider
                 "Failed to deserialize SmartLogger configuration.");
         }
 
+
         Validate(configuration);
 
         return configuration;
@@ -86,10 +88,22 @@ public sealed class JsonConfigurationProvider : ILogConfigurationProvider
 
     private static void Validate(LogConfigurationHolder config)
     {
-        if (config.Appenders is null || !config.Appenders.Any())
+        List<LogOutputDestination> duplicateDestinations = config.Appenders.GroupBy(a => a.Destination)
+                                                    .Where(g => g.Count() > 1 && g.Key != LogOutputDestination.Unknown)
+                                                    .Select(g => g.Key)
+                                                    .ToList();
+
+        if (duplicateDestinations.Any())
         {
+            string destinations = string.Join(", ", duplicateDestinations);
+
             throw new InvalidOperationException(
-                "At least one appender must be configured.");
+                $"Duplicate appender destinations detected: {destinations}. " +
+                "Each destination should be configured only once.\n\n" +
+                "Suggested fixes:\n" +
+                "- Merge configurations into a single appender\n" +
+                "- Or use different destinations (e.g., Console + FileSystem)"
+            );
         }
 
         foreach (var appender in config.Appenders)
@@ -97,7 +111,33 @@ public sealed class JsonConfigurationProvider : ILogConfigurationProvider
             if (appender.Destination == LogOutputDestination.Unknown)
             {
                 throw new InvalidOperationException(
-                    "Appender destination must be specified.");
+                    "Appender destination must be specified. \n" +
+                    "Tip: Use 'Console' or 'FileSystem' to get started."
+                );
+            }
+
+            // validate file path for FileSystem
+            if (appender.Destination == LogOutputDestination.FileSystem)
+            {
+                if (string.IsNullOrWhiteSpace(appender.File.BasePath))
+                {
+                    throw new InvalidOperationException(
+                        "FileSystem appender requires a valid 'filePath' in settings.\n" +
+                        "Example:\n" +
+                        "\"settings\": { \"filePath\": \"logs/app.log\" }"
+                    );
+                }
+            }
+
+            // validate custom layout
+            if (appender.LayoutType == LogMessageLayoutType.Custom &&
+                string.IsNullOrWhiteSpace(appender.Pattern))
+            {
+                throw new InvalidOperationException(
+                    "Custom layout requires a non-empty 'pattern'.\n" +
+                    "Example:\n" +
+                    "\"pattern\": \"[%LEVEL] %MESSAGE\""
+                );
             }
         }
     }

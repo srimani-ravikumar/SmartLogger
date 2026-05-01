@@ -1,4 +1,5 @@
-﻿using SmartLogger.Core;
+﻿using SmartLogger.Appenders.FileRolling;
+using SmartLogger.Core;
 using SmartLogger.Formatters;
 using System;
 using System.IO;
@@ -10,20 +11,22 @@ namespace SmartLogger.Appenders;
 /// </summary>
 internal sealed class FileAppender : ILogAppender
 {
-    private readonly string _filePath;
+    private readonly FileNameBuilder _fileNameBuilder;
+    private string _activeFilePath;
+    private readonly FileConfiguration _fileConfig;
     private LogLevel _logLevel;
-    private ILogFormatter _formatter;
+    private ILogOutputFormatterStrategy _formatter;
+    private readonly IRollingStrategy? _rollingStrategy;
     private readonly object _lockObject = new();
 
-    internal FileAppender(string path, LogLevel logLevel)
+    internal FileAppender(FileConfiguration fileConfig, LogLevel logLevel, ILogOutputFormatterStrategy formatter, IRollingStrategy? rollingStrategy)
     {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new ArgumentException("File path cannot be null or empty.", nameof(path));
-
-        _filePath = ResolvePath(path);
+        _fileConfig = fileConfig ?? throw new ArgumentNullException(nameof(fileConfig));
         _logLevel = logLevel;
-        _formatter = new DetailedFormatter();
-
+        _formatter = formatter;
+        _rollingStrategy = rollingStrategy;
+        _fileNameBuilder = new FileNameBuilder(_fileConfig);
+        _activeFilePath = ResolvePath(_fileNameBuilder.Build());
         EnsureDirectoryExists();
     }
 
@@ -40,7 +43,21 @@ internal sealed class FileAppender : ILogAppender
         // Lock only during physical I/O
         lock (_lockObject)
         {
-            File.AppendAllText(_filePath, formattedMessage + Environment.NewLine);
+            if (_rollingStrategy != null && _rollingStrategy.ShouldRoll(_activeFilePath))
+            {
+                var newFile = _rollingStrategy.GetNextFilePath(_activeFilePath);
+
+                if (File.Exists(_activeFilePath))
+                {
+                    File.Move(_activeFilePath, newFile);
+                }
+
+                _rollingStrategy.OnRoll(newFile);
+
+                _activeFilePath = ResolvePath(_fileNameBuilder.Build());
+            }
+
+            File.AppendAllText(_activeFilePath, formattedMessage + Environment.NewLine);
         }
     }
 
@@ -63,13 +80,13 @@ internal sealed class FileAppender : ILogAppender
     }
 
     /// <inheritdoc/>
-    public void SetFormatter(ILogFormatter formatter)
+    public void SetFormatter(ILogOutputFormatterStrategy formatter)
     {
         _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
     }
 
     /// <inheritdoc/>
-    public ILogFormatter GetFormatter()
+    public ILogOutputFormatterStrategy GetFormatter()
     {
         return _formatter;
     }
@@ -77,7 +94,7 @@ internal sealed class FileAppender : ILogAppender
     /// <inheritdoc/>
     private void EnsureDirectoryExists()
     {
-        var directory = Path.GetDirectoryName(_filePath);
+        var directory = Path.GetDirectoryName(_activeFilePath);
 
         if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
         {

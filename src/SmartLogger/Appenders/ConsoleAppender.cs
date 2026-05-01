@@ -1,6 +1,7 @@
 ﻿using SmartLogger.Core;
 using SmartLogger.Formatters;
 using System;
+using System.Threading;
 
 namespace SmartLogger.Appenders;
 
@@ -12,15 +13,24 @@ internal sealed class ConsoleAppender : ILogAppender
     // Threshold and Formatter are volatile or read-only references to ensure 
     // thread-safety when they are updated via Setters.
     private LogLevel _logLevel;
-    private ILogFormatter _formatter;
+    private ILogOutputFormatterStrategy _formatter;
     private readonly object _lockObject = new();
 
-    internal ConsoleAppender() : this(LogLevel.DEBUG) { }
+    internal ConsoleAppender()
+    {
+        _logLevel = LogLevel.INFO;
+        _formatter = FormatterFactory.Create(new AppenderConfiguration()
+        {
+            Destination = LogOutputDestination.Console,
+            OutputFormat = LogOutputFormat.PlainText,
+            LayoutType = LogMessageLayoutType.Simple
+        });
+    }
 
-    internal ConsoleAppender(LogLevel logLevel)
+    internal ConsoleAppender(LogLevel logLevel, ILogOutputFormatterStrategy formatter)
     {
         _logLevel = logLevel;
-        _formatter = new DetailedFormatter();
+        _formatter = formatter;
     }
 
     /// <inheritdoc />
@@ -61,11 +71,11 @@ internal sealed class ConsoleAppender : ILogAppender
     public bool IsEnabled(LogLevel logLevel) => logLevel.IsGreaterOrEqual(_logLevel);
 
     /// <inheritdoc />
-    public void SetFormatter(ILogFormatter formatter)
+    public void SetFormatter(ILogOutputFormatterStrategy formatter)
     {
         _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
     }
 
     /// <inheritdoc />
-    public ILogFormatter GetFormatter() => _formatter;
+    public ILogOutputFormatterStrategy GetFormatter() => _formatter;
 }

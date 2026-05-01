@@ -98,7 +98,7 @@ or
     }
     };
 
-    ILogConfigurationProvider provider = new nMemoryConfigurationProvider(config);
+    ILogConfigurationProvider provider = new InMemoryConfigurationProvider(config);
 
     LoggerManager.Initialize(provider);
 ```
@@ -139,7 +139,7 @@ logger.Error("Payment gateway timeout.");
 }
 ```
 
-For more information on configuration refer: [SmartLogger_Configuration_Guide](https://github.com/srimani-ravikumar/SmartLogger/blob/main/docs/configuration-guide.md)
+For more information on configuration refer: [SmartLogger_Configuration_Guide](https://github.com/srimani-ravikumar/SmartLogger/blob/main/docs/client/configuration-guide.md)
 ---
 
 ## Ideal Use Cases

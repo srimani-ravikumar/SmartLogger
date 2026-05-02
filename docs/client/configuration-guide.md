@@ -14,6 +14,7 @@
 * Uses default console appender
 * Uses simple layout
 * Plain text output
+* Synchronous logging
 
 ---
 
@@ -24,10 +25,14 @@
   "rootLogLevel": "INFO",
   "appenders": [
     {
-      "destination": "Console",
-      "threshold": "DEBUG",
-      "outputFormat": "PlainText",
-      "layoutType": "Simple"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Simple"
+      },
+      "appenderLogLevel": "DEBUG"
     }
   ]
 }
@@ -42,10 +47,13 @@
   "rootLogLevel": "DEBUG",
   "appenders": [
     {
-      "destination": "Console",
-      "threshold": "DEBUG",
-      "outputFormat": "PlainText",
-      "layoutType": "Detailed"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Detailed"
+      }
     }
   ]
 }
@@ -57,13 +65,16 @@
 
 ```json
 {
-  "rootLogLevel": "INFO",
   "appenders": [
     {
-      "destination": "Console",
-      "outputFormat": "PlainText",
-      "layoutType": "Custom",
-      "pattern": "[%LEVEL] %MESSAGE (%THREAD)"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Custom",
+        "pattern": "[%LEVEL] %MESSAGE (%THREAD)"
+      }
     }
   ]
 }
@@ -77,17 +88,20 @@
 
 ```json
 {
-  "rootLogLevel": "INFO",
   "appenders": [
     {
-      "destination": "FileSystem",
-      "threshold": "INFO",
-      "outputFormat": "PlainText",
-      "layoutType": "Detailed",
-      "file": {
-        "basePath": "logs/app",
-        "extension": "log"
-      }
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app",
+          "extension": "log"
+        }
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Detailed"
+      },
+      "appenderLogLevel": "INFO"
     }
   ]
 }
@@ -96,7 +110,7 @@
 ### What this does
 
 * Writes logs to `logs/app.log`
-* Uses default naming (date + index enabled)
+* Uses default naming (date + index)
 * Uses detailed layout
 
 ---
@@ -107,15 +121,17 @@
 {
   "appenders": [
     {
-      "destination": "FileSystem",
-      "file": {
-        "basePath": "logs/payment",
-        "extension": "log",
-        "naming": {
-          "includeDate": true,
-          "dateFormat": "yyyy-MM-dd",
-          "includeIndex": true,
-          "separator": "_"
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/payment",
+          "extension": "log",
+          "naming": {
+            "includeDate": true,
+            "dateFormat": "yyyy-MM-dd",
+            "includeIndex": true,
+            "separator": "_"
+          }
         }
       }
     }
@@ -132,19 +148,21 @@ logs/payment_2026-01-01_2.log
 
 ---
 
-## 7. Disable Date / Index (Static File)
+## 7. Static File (No Date / Index)
 
 ```json
 {
   "appenders": [
     {
-      "destination": "FileSystem",
-      "file": {
-        "basePath": "logs/static",
-        "extension": "log",
-        "naming": {
-          "includeDate": false,
-          "includeIndex": false
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/static",
+          "extension": "log",
+          "naming": {
+            "includeDate": false,
+            "includeIndex": false
+          }
         }
       }
     }
@@ -168,15 +186,21 @@ logs/static.log
 {
   "appenders": [
     {
-      "destination": "FileSystem",
-      "file": {
-        "basePath": "logs/app",
-        "extension": "log"
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app"
+        }
       },
-      "rollingPolicy": {
-        "rollingType": "Size",
-        "maxFileSizeMB": 10,
-        "maxRetainedFiles": 5
+      "formatter": {
+        "outputFormat": "PlainText"
+      },
+      "file": {
+        "rollingPolicy": {
+          "rollingType": "Size",
+          "maxFileSizeMB": 10,
+          "maxRetainedFiles": 5
+        }
       }
     }
   ]
@@ -185,7 +209,7 @@ logs/static.log
 
 ### What this does
 
-* Rolls when file exceeds 10 MB
+* Rolls file when size exceeds 10 MB
 * Keeps last 5 files
 * Prevents disk overflow
 
@@ -197,14 +221,15 @@ logs/static.log
 {
   "appenders": [
     {
-      "destination": "FileSystem",
-      "file": {
-        "basePath": "logs/app",
-        "extension": "log"
-      },
-      "rollingPolicy": {
-        "rollingType": "Time",
-        "interval": "Day"
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app",
+          "rollingPolicy": {
+            "rollingType": "Time",
+            "interval": "Day"
+          }
+        }
       }
     }
   ]
@@ -214,36 +239,32 @@ logs/static.log
 ### What this does
 
 * Creates a new file every day
-* Automatically segments logs by time window
+* Segments logs by time window
 
 ---
 
-## 10. Hybrid Rolling (Time + Size) -> Coming Soon!
+## 10. Hybrid Rolling (Coming Soon)
 
 ```json
 {
   "appenders": [
     {
-      "destination": "FileSystem",
-      "file": {
-        "basePath": "logs/app",
-        "extension": "log"
-      },
-      "rollingPolicy": {
-        "rollingType": "Hybrid",
-        "interval": "Day",
-        "maxFileSizeMB": 50,
-        "maxRetainedFiles": 7
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app",
+          "rollingPolicy": {
+            "rollingType": "Hybrid",
+            "interval": "Day",
+            "maxFileSizeMB": 50,
+            "maxRetainedFiles": 7
+          }
+        }
       }
     }
   ]
 }
 ```
-
-### What this does
-
-* Rolls daily OR on size breach
-* Best suited for production workloads
 
 ---
 
@@ -255,8 +276,12 @@ logs/static.log
 {
   "appenders": [
     {
-      "destination": "Console",
-      "outputFormat": "Json"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "Json"
+      }
     }
   ]
 }
@@ -270,9 +295,13 @@ logs/static.log
 {
   "appenders": [
     {
-      "destination": "Console",
-      "outputFormat": "Json",
-      "jsonFields": ["timestamp", "level", "message"]
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "Json",
+        "jsonFields": ["timestamp", "level", "message"]
+      }
     }
   ]
 }
@@ -286,13 +315,59 @@ logs/static.log
 {
   "appenders": [
     {
-      "destination": "Console",
-      "outputFormat": "Json",
-      "jsonFields": ["timestamp", "level", "message"],
-      "jsonFieldMapping": {
-        "timestamp": "@timestamp",
-        "level": "severity",
-        "message": "msg"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "Json",
+        "jsonFields": ["timestamp", "level", "message"],
+        "jsonFieldMapping": {
+          "timestamp": "@timestamp",
+          "level": "severity",
+          "message": "msg"
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+# Filtering
+
+## 14. Filter by Log Level
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "Console"
+      },
+      "filter": {
+        "minLevel": "INFO",
+        "maxLevel": "ERROR"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## 15. Keyword Filtering
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "Console"
+      },
+      "filter": {
+        "includeKeywords": ["Payment"],
+        "excludeKeywords": ["HealthCheck"]
       }
     }
   ]
@@ -303,23 +378,30 @@ logs/static.log
 
 # Multi-Appender Setup
 
-## 14. Console + File (Production)
+## 16. Console + File (Production)
 
 ```json
 {
   "rootLogLevel": "DEBUG",
   "appenders": [
     {
-      "destination": "Console",
-      "outputFormat": "PlainText",
-      "layoutType": "Simple"
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText"
+      }
     },
     {
-      "destination": "FileSystem",
-      "outputFormat": "Json",
-      "file": {
-        "basePath": "logs/app",
-        "extension": "json"
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app",
+          "extension": "json"
+        }
+      },
+      "formatter": {
+        "outputFormat": "Json"
       }
     }
   ]
@@ -330,7 +412,7 @@ logs/static.log
 
 # Logger Overrides
 
-## 15. Per-Component Logging Control
+## 17. Per-Component Control
 
 ```json
 {
@@ -341,12 +423,64 @@ logs/static.log
   }
 }
 ```
+# Async Logging (Performance Optimization)
+
+## 18. Enable Async Logging
+
+```json
+{
+  "rootLogLevel": "INFO",
+  "enableAsyncLoggingProcess": true,
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "basePath": "logs/app",
+          "extension": "jsonl"
+        }
+      },
+      "formatter": {
+        "outputFormat": "Json"
+      }
+    }
+  ]
+}
+```
+
+### What this does
+
+* Moves logging I/O to a background worker thread
+* Reduces latency on the main application thread
+* Uses an internal queue to buffer log events
 
 ---
 
-# Supported Tokens (PlainText Layouts)
+### When to use
 
-```text
+* High-throughput systems (APIs, batch jobs, streaming)
+* File or remote logging (I/O heavy operations)
+* Production workloads
+
+---
+
+### When NOT to use
+
+* Debugging critical issues (you want immediate visibility)
+* Systems where **strict log ordering / durability** is required
+
+---
+
+### Design Note
+
+> SmartLogger is **synchronous by default** for correctness.
+> Async mode is an **opt-in optimization**, not the default behavior.
+
+---
+
+# Supported Tokens (PlainText Layout)
+
+```
 %TIMESTAMP
 %LEVEL
 %MESSAGE
@@ -360,35 +494,56 @@ logs/static.log
 # JSON Configuration Notes
 
 * `jsonFields` → controls which fields are included
-* `jsonFieldMapping` → renames output fields
-* If not provided → all fields included
+* `jsonFieldMapping` → renames fields
+* Default fields provide balanced observability
+
+---
+
+# Destination Notes
+
+* `type` → Console | FileSystem | DatabaseSystem
+* `file` → required only for FileSystem
 
 ---
 
 # File Configuration Notes
 
-* `basePath` → logical file identity (without extension)
-* `extension` → output format (log, json, txt)
-* `naming.includeDate` → enables time-based file grouping
-* `naming.includeIndex` → enables rolling index suffix
-* `separator` → controls readability of file names
+* `basePath` → logical file identity
+* `extension` → output type (log, json, txt)
+* `naming` → controls file naming behavior
 
 ---
 
 # Rolling Policy Notes
 
 * `rollingType` → Size | Time | Hybrid
-* `maxFileSizeMB` → triggers size rotation
+* `maxFileSizeMB` → size-based rotation
 * `interval` → Hour | Day | Month
-* `maxRetainedFiles` → prevents disk exhaustion
+* `maxRetainedFiles` → disk safety
+
+---
+
+# Filter Notes
+
+* `minLevel` / `maxLevel` → level-based filtering
+* `includeKeywords` → allow only matching logs
+* `excludeKeywords` → drop unwanted logs
 
 ---
 
 # Thanks for reading upto the end. Below is the pro tip for you! 
 
 * Use **PlainText + Detailed layout** during development
-* Use **JSON output** for observability systems (ELK, Splunk, etc.)
-* Use **File naming + rolling together** for clean log lifecycle
-* Always configure **retention** in production environments
+* Use **JSON output** for observability platforms (ELK, Splunk)
+* Use **filters** to reduce noise without code changes
+* Combine **file naming + rolling** for production hygiene
+* Enable **async logging** for high-throughput systems
+
+---
+
+# If I want to sum up smart logger in one line... it would be defined as follows :) 
+
+> SmartLogger is designed to give you **control without complexity**
+> Start simple → scale to production → no redesign needed
 
 ---

@@ -171,7 +171,7 @@ For more information on configuration refer: [SmartLogger_Configuration_Guide](h
 
 ---
 
-## 🧪 Ideal Use Cases
+## Ideal Use Cases
 
 * Learning system design
 * Web APIs
@@ -181,7 +181,7 @@ For more information on configuration refer: [SmartLogger_Configuration_Guide](h
 
 ---
 
-## 📌 Summary
+## Summary
 
 SmartLogger provides a clean and extensible logging solution for .NET applications, with support for:
 

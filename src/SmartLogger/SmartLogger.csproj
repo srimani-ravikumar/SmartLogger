@@ -40,7 +40,7 @@
   <ItemGroup>
     <None Include="Assets/Icon.png" Pack="true" PackagePath="\" />
 
-    <None Include="../../docs/package-readme.md" Pack="true" PackagePath="\" />
+    <None Include="../../docs/client/package-readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

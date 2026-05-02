@@ -17,7 +17,7 @@
     <Authors>Srimani</Authors>
 
     <Description>
-      SmartLogger is a production-focused, extensible logging framework for .NET with support for structured logging, correlation context, runtime configuration reload, and multi-destination output. Designed with concurrency safety and system resilience in mind.
+      SmartLogger isn’t about replacing existing logging frameworks. It’s a hands-on attempt to understand how real logging systems are designed, especially how they behave under load, handle failures, and stay reliable in real-world scenarios.
     </Description>
 
     <PackageTags>

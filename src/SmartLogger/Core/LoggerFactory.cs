@@ -3,38 +3,57 @@ using SmartLogger.Appenders.FileRolling;
 using SmartLogger.Formatters;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SmartLogger.Core;
 
 /// <summary>
-/// "Simple Factory" responsible for creating and caching <see cref="ISmartLogger"/> instances 
-/// based on the active <see cref="LogConfigurationHolder"/>.
+/// Factory responsible for creating, configuring, and caching <see cref="ISmartLogger"/> instances.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Acts as the central composition root for logger instances:
+/// </para>
+/// <list type="bullet">
+/// <item><description>Resolves effective log levels</description></item>
+/// <item><description>Constructs appenders based on configuration</description></item>
+/// <item><description>Caches loggers for reuse</description></item>
+/// <item><description>Supports dynamic configuration updates</description></item>
+/// </list>
+/// 
+/// <para>
+/// Thread Safety:
+/// </para>
+/// <list type="bullet">
+/// <item><description>Logger cache is managed via <see cref="ConcurrentDictionary{TKey, TValue}"/></description></item>
+/// <item><description>Configuration updates use atomic reference replacement</description></item>
+/// </list>
+/// </remarks>
 internal class LoggerFactory
 {
-    /* Marked as volatile to ensure that configuration updates made by one thread
-    ** are immediately visible to all other threads without caching.
-    ** Since configuration is replaced atomically via reference swap,
-    ** volatile guarantees memory visibility while avoiding locks.
-    */
+    /// <summary>
+    /// Active configuration snapshot.
+    /// </summary>
+    /// <remarks>
+    /// Marked as <c>volatile</c> to ensure visibility across threads.
+    /// Updated via atomic reference swap.
+    /// </remarks>
     private volatile LogConfigurationHolder _configuration;
 
-    // Going with ConcurrentDictionary for thread-safe caching of loggers by name.
+    /// <summary>
+    /// Cache of loggers keyed by logger name.
+    /// </summary>
     private readonly ConcurrentDictionary<string, ISmartLogger> _loggers = new();
 
     /// <summary>
-    /// Initializes a new instance of <see cref="LoggerFactory"/>
-    /// using the specified configuration provider.
+    /// Initializes a new instance of the <see cref="LoggerFactory"/> class.
     /// </summary>
-    /// <param name="provider">
-    /// The configuration provider used to load logging settings.
-    /// </param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when the provider is null.
-    /// </exception>
+    /// <param name="provider">Configuration provider.</param>
+    /// <exception cref="ArgumentNullException">Thrown when provider is null.</exception>
     internal LoggerFactory(ILogConfigurationProvider provider)
     {
-        _configuration = provider.Load();
+        _configuration = provider?.Load() ?? throw new ArgumentNullException(nameof(provider));
     }
 
     /// <summary>
@@ -49,20 +68,44 @@ internal class LoggerFactory
         // The factory lambda only executes if the logger doesn't already exist.
         ISmartLogger instance = _loggers.GetOrAdd(name, loggerName =>
         {
-            // 1. Determine the log level based on the name (e.g., namespace overrides)
-            LogLevel initialLevel = ResolveLogLevel(loggerName);
+            var config = _configuration; // snapshot for consistency
+
+            // 1. Determine the log level based on the name (e.g., namespace overrides and appender specific)
+            LogLevel initialLevel = ResolveLogLevel(loggerName, config);
 
             // 2. Instantiate the implementation
             // We disable the default appender because we are manually attaching them from config
             var logger = new LoggerImplementation(
                 name: loggerName,
-                logLevel: initialLevel,
-                enableDefaultConsoleAppender: _configuration.EnableDefaultConsoleAppender);
+                effectiveMinLogLevel: initialLevel,
+                enableDefaultConsoleAppender: config.EnableDefaultConsoleAppender);
 
             // 3. Populate the logger with appenders defined in the current configuration
-            foreach (var appenderConfig in _configuration.Appenders)
+            foreach (var appenderConfig in config.Appenders)
             {
-                var appender = CreateAppender(appenderConfig);
+                ILogAppender appender;
+
+                // 3.1. Enable asyncchronous logging if configured
+                if (appenderConfig.Destination.Type == LogOutputDestination.FileSystem)
+                {
+                    appender = FileAppenderRegistry.GetOrCreate(
+                        appenderConfig,
+                        appenderConfig.AppenderLogLevel.HasValue ? appenderConfig.AppenderLogLevel.Value : config.RootLogLevel,
+                        FormatterFactory.Create(appenderConfig),
+                        RollingFactory.Create(appenderConfig.Destination.File),
+                        config.EnableAsyncLoggingProcess
+                    );
+                }
+                else
+                {
+                    appender = CreateAppender(appenderConfig, config);
+
+                    if (config.EnableAsyncLoggingProcess)
+                    {
+                        appender = new AsyncAppenderWrapper(appender);
+                    }
+                }
+
                 logger.AddAppender(appender);
             }
 
@@ -73,60 +116,81 @@ internal class LoggerFactory
     }
 
     /// <summary>
-    /// Atomically updates the active logging configuration.
-    /// Newly created loggers will use the updated configuration.
+    /// Atomically updates the active configuration and propagates changes to existing loggers.
     /// </summary>
-    /// <param name="newConfig">The new configuration to apply.</param>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when the new configuration is null.
-    /// </exception>
+    /// <param name="newConfig">New configuration.</param>
     internal void UpdateConfiguration(LogConfigurationHolder newConfig)
     {
         if (newConfig == null)
             throw new ArgumentNullException(nameof(newConfig));
 
-        _configuration = newConfig; // atomic reference swap
+        _configuration = newConfig; // atomic swap
+
+        // Soft reload existing loggers
+        foreach (var kvp in _loggers)
+        {
+            if (kvp.Value is not LoggerImplementation logger)
+                continue;
+
+            var loggerName = kvp.Key;
+
+            var newLevel = ResolveLogLevel(loggerName, newConfig);
+            var newAppenders = BuildAppenders(newConfig);
+
+            logger.UpdateConfiguration(newLevel, newAppenders);
+        }
     }
 
     /// <summary>
-    /// Resolves the effective log level for the specified logger name,
-    /// checking overrides before falling back to the root level.
+    /// Builds appenders from configuration.
     /// </summary>
-    /// <param name="loggerName">The logger name to resolve.</param>
-    /// <returns>The effective <see cref="LogLevel"/>.</returns>
-    private LogLevel ResolveLogLevel(string loggerName)
+    private List<ILogAppender> BuildAppenders(LogConfigurationHolder config)
     {
-        if (_configuration.LoggerOverrides.TryGetValue(loggerName, out var level))
+        var list = new List<ILogAppender>();
+
+        foreach (var appenderConfig in config.Appenders)
+        {
+            var appender = CreateAppender(appenderConfig, config);
+
+            list.Add(config.EnableAsyncLoggingProcess
+                ? new AsyncAppenderWrapper(appender)
+                : appender);
+        }
+
+        return list;
+    }
+
+    /// <summary>
+    /// Resolves effective log level using overrides or defaults.
+    /// </summary>
+    private LogLevel ResolveLogLevel(string loggerName, LogConfigurationHolder config)
+    {
+        if (config.LoggerOverrides.TryGetValue(loggerName, out var level))
             return level;
 
-        return _configuration.RootLogLevel;
+        return config.Appenders.Any()
+            ? config.Appenders.Min(a => a.AppenderLogLevel ?? config.RootLogLevel)
+            : config.RootLogLevel;
     }
 
     /// <summary>
-    /// Creates an appropriate <see cref="ILogAppender"/> instance
-    /// based on the provided configuration.
+    /// Creates an appender based on configuration.
     /// </summary>
-    /// <param name="config">The appender configuration.</param>
-    /// <returns>An initialized <see cref="ILogAppender"/>.</returns>
-    /// <exception cref="NotSupportedException">
-    /// Thrown when the destination type is not supported.
-    /// </exception>
-    private ILogAppender CreateAppender(AppenderConfiguration config)
+    private ILogAppender CreateAppender(AppenderConfiguration config, LogConfigurationHolder globalConfig)
     {
-        // TODO: Validate only for FileSytem and not here - it should go under configuration provider
-        // var fileConfig = config.File ?? throw new InvalidOperationException("File configuration required");
+        var appenderLogLevel = config.AppenderLogLevel ?? globalConfig.RootLogLevel;
 
-        return config.Destination switch
+        return config.Destination.Type switch
         {
             LogOutputDestination.Console =>
-                new ConsoleAppender(config.Threshold, FormatterFactory.Create(config)),
+                new ConsoleAppender(appenderLogLevel, FormatterFactory.Create(config)),
 
             LogOutputDestination.FileSystem =>
                 new FileAppender(
-                    config.File,
-                    config.Threshold,
+                    config.Destination.File,
+                    appenderLogLevel,
                     FormatterFactory.Create(config),
-                    RollingFactory.Create(config.File)),
+                    RollingFactory.Create(config.Destination.File)),
 
             // ToDo
             //LogOutputDestination.DatabaseSystem =>
@@ -134,8 +198,9 @@ internal class LoggerFactory
             //        config.Settings["connectionString"],
             //        config.Threshold),
 
+
             _ => throw new NotSupportedException(
-                    $"Unsupported destination: {config.Destination}")
+                $"Unsupported destination: {config.Destination.Type}")
         };
     }
 }

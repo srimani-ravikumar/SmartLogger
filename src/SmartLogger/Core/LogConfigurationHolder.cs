@@ -1,92 +1,197 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace SmartLogger.Core;
 
 /// <summary>
-/// Holds the complete logging configuration
-/// including root level, logger overrides, and appenders.
+/// Represents the root logging configuration.
+/// This is the main entry point for configuring logging behavior.
 /// </summary>
+/// <remarks>
+/// Default behavior:
+/// - RootLogLevel = INFO
+/// - A console appender is automatically enabled if no appenders are configured.
+/// </remarks>
 public sealed class LogConfigurationHolder
 {
-    // Smart loggers default level will always be INFO
-
     /// <summary>
-    /// Gets or sets the default log level applied
-    /// when no specific logger override is defined.
+    /// Gets or sets the default log level.
+    /// This level is applied when no specific override is found.
     /// </summary>
+    /// <value>Default: INFO</value>
     public LogLevel RootLogLevel { get; set; } = LogLevel.INFO;
 
     /// <summary>
     /// Gets or sets logger-specific level overrides.
-    /// Key represents logger name (e.g., namespace/class),
-    /// value represents the minimum log level.
+    /// Key = logger name (namespace/class), Value = minimum log level.
     /// </summary>
+    /// <remarks>
+    /// Example:
+    /// "MyApp.Services" → DEBUG
+    /// </remarks>
     public Dictionary<string, LogLevel> LoggerOverrides { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the collection of configured appenders
-    /// that define where log messages are written.
+    /// Gets or sets all configured appenders.
+    /// Each appender defines where logs go and how they are formatted.
     /// </summary>
     public List<AppenderConfiguration> Appenders { get; set; } = new();
 
     /// <summary>
-    /// Set to true to enable a default console appender when no appenders are configured.
+    /// Gets a value indicating whether a default console appender should be enabled.
     /// </summary>
-    public bool EnableDefaultConsoleAppender
-    {
-        get
-        {
-            return Appenders is null || Appenders.Count == 0;
-        }
-    }
+    /// <remarks>
+    /// If no appenders are configured, the system automatically logs to console.
+    /// </remarks>
+    public bool EnableDefaultConsoleAppender => Appenders == null || Appenders.Count == 0;
+
+    /// <summary>
+    /// Enables asynchronous log processing.
+    /// </summary>
+    /// <value>Default: false</value>
+    /// <remarks>
+    /// When enabled, logs are processed in background threads to improve performance.
+    /// </remarks>
+    public bool EnableAsyncLoggingProcess { get; set; } = false;
 }
 
 /// <summary>
-/// Represents configuration settings for a specific log output destination.
+/// Represents a single log appender.
+/// An appender defines where logs are written, how they are formatted, and optional filtering.
 /// </summary>
+/// <remarks>
+/// Example:
+/// - Console appender with simple format
+/// - File appender with JSON format
+/// </remarks>
 public sealed class AppenderConfiguration
 {
     /// <summary>
-    /// Gets or sets the destination type
-    /// where log messages will be written.
+    /// Gets or sets destination-related configuration.
     /// </summary>
-    public LogOutputDestination Destination { get; set; }
+    public DestinationConfiguration Destination { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the minimum log level required
-    /// for this appender to process a message.
+    /// Gets or sets formatting configuration.
     /// </summary>
-    public LogLevel Threshold { get; set; } = LogLevel.INFO;
+    public FormatterConfiguration Formatter { get; set; } = new();
 
-    public FileConfiguration File { get; set; }
+    /// <summary>
+    /// Gets or sets filtering configuration (future extension).
+    /// </summary>
+    /// <remarks>
+    /// If not set, all logs are allowed.
+    /// </remarks>
+    public object? Filter { get; set; } // TODO: Strong type later
 
+    /// <summary>
+    /// Optional override for minimum log level for this appender.
+    /// </summary>
+    /// <remarks>
+    /// If not specified, RootLogLevel will be used.
+    /// </remarks>
+    public LogLevel? AppenderLogLevel { get; set; }
+}
+
+/// <summary>
+/// Defines where log messages are written.
+/// </summary>
+/// <remarks>
+/// Default destination is Console.
+/// </remarks>
+public sealed class DestinationConfiguration
+{
+    /// <summary>
+    /// Gets or sets the output destination.
+    /// </summary>
+    /// <value>Default: Console</value>
+    public LogOutputDestination Type { get; set; } = LogOutputDestination.Console;
+
+    /// <summary>
+    /// File-specific configuration.
+    /// Required only when Type = FileSystem.
+    /// </summary>
+    public FileConfiguration? File { get; set; }
+
+    /// <summary>
+    /// Database-specific configuration (future extension).
+    /// </summary>
+    public object? Database { get; set; } // TODO: Strong type later
+}
+
+/// <summary>
+/// Defines how log messages are formatted before being written.
+/// </summary>
+/// <remarks>
+/// Default is plain text with a simple layout.
+/// </remarks>
+public sealed class FormatterConfiguration
+{
+    /// <summary>
+    /// Gets or sets output format.
+    /// </summary>
+    /// <value>Default: PlainText</value>
     public LogOutputFormat OutputFormat { get; set; } = LogOutputFormat.PlainText;
 
+    /// <summary>
+    /// Gets or sets layout type.
+    /// </summary>
+    /// <value>Default: Simple</value>
     public LogMessageLayoutType LayoutType { get; set; } = LogMessageLayoutType.Simple;
 
+    /// <summary>
+    /// Custom pattern used when Layout = Custom.
+    /// </summary>
+    /// <remarks>
+    /// Example: "%date [%level] %message"
+    /// </remarks>
     public string Pattern { get; set; } = string.Empty;
 
-    // be default the system should allow all fields
-    public List<string> JsonFields { get; set; } = new() { "timestamp", "level", "thread", "correlation", "source", "message" };
+    /// <summary>
+    /// Defines fields to include when using JSON format.
+    /// </summary>
+    /// <remarks>
+    /// Default fields provide a balanced observability view.
+    /// </remarks>
+    public List<string> JsonFields { get; set; } =
+        new() { "timestamp", "level", "thread", "correlation", "source", "message" };
 
-    // optional: to configured the json property name
+    /// <summary>
+    /// Optional mapping for JSON field names.
+    /// </summary>
+    /// <remarks>
+    /// Example:
+    /// "timestamp" → "ts"
+    /// </remarks>
     public Dictionary<string, string> JsonFieldMapping { get; set; } = new();
 }
 
+/// <summary>
+/// Represents configuration for file-based logging.
+/// </summary>
+/// <remarks>
+/// Encapsulates all settings required for:
+/// <list type="bullet">
+/// <item><description>File path and extension</description></item>
+/// <item><description>File naming strategy</description></item>
+/// <item><description>Rolling policy (size/time-based rotation)</description></item>
+/// </list>
+/// </remarks>
 public sealed class FileConfiguration
 {
     /// <summary>
-    /// Base path without extension or suffix.
-    /// Example: logs/app
+    /// Base file path without extension or suffix.
     /// </summary>
+    /// <remarks>
+    /// Example: <c>logs/app</c> → final file may become <c>logs/app-2026-05-02.log</c>
+    /// </remarks>
     public string BasePath { get; set; } = "logs/app";
 
     /// <summary>
-    /// File extension (without dot).
-    /// Example: log, txt, json
+    /// File extension (without leading dot).
     /// </summary>
+    /// <remarks>
+    /// Example: <c>log</c>, <c>txt</c>, <c>json</c>
+    /// </remarks>
     public string Extension { get; set; } = "log";
 
     /// <summary>
@@ -95,48 +200,97 @@ public sealed class FileConfiguration
     public FileNamingConfiguration Naming { get; set; } = new();
 
     /// <summary>
-    /// Rolling policy for file rotation.
+    /// Defines rolling policy for file rotation.
     /// </summary>
     public RollingPolicyConfiguration RollingPolicy { get; set; } = new();
 }
 
+/// <summary>
+/// Defines how log file names are constructed.
+/// </summary>
+/// <remarks>
+/// Combines base name with optional components such as date and index.
+/// </remarks>
 public sealed class FileNamingConfiguration
 {
     /// <summary>
-    /// Whether to include date in file name.
+    /// Indicates whether the current date should be included in the file name.
     /// </summary>
     public bool IncludeDate { get; set; } = true;
 
     /// <summary>
-    /// Date format used when IncludeDate is true.
+    /// Date format used when <see cref="IncludeDate"/> is enabled.
     /// </summary>
+    /// <remarks>
+    /// Uses standard .NET date format strings (e.g., <c>yyyy-MM-dd</c>).
+    /// </remarks>
     public string DateFormat { get; set; } = "yyyy-MM-dd";
 
     /// <summary>
-    /// Whether to include rolling index.
+    /// Indicates whether a rolling index should be included.
     /// </summary>
+    /// <remarks>
+    /// Used to differentiate multiple files within the same time window.
+    /// </remarks>
     public bool IncludeIndex { get; set; } = true;
 
     /// <summary>
-    /// Separator between parts.
-    /// Example: "-", "_"
+    /// Separator used between file name components.
     /// </summary>
+    /// <remarks>
+    /// Example: <c>-</c>, <c>_</c>
+    /// </remarks>
     public string Separator { get; set; } = "-";
 }
 
+
+/// <summary>
+/// Defines rules for log file rotation.
+/// </summary>
+/// <remarks>
+/// Supports multiple rolling strategies:
+/// <list type="bullet">
+/// <item><description>Size-based rolling</description></item>
+/// <item><description>Time-based rolling</description></item>
+/// </list>
+/// </remarks>
 public sealed class RollingPolicyConfiguration
 {
+    /// <summary>
+    /// Type of rolling strategy to apply.
+    /// </summary>
     public RollingType RollingType { get; set; } = RollingType.None;
 
-    // Size-based (in MB), defaults to 10 mb
+    /// <summary>
+    /// Maximum file size in megabytes before triggering a roll.
+    /// </summary>
+    /// <remarks>
+    /// Applicable only for size-based rolling.
+    /// </remarks>
     public long MaxFileSizeMB { get; set; } = 10;
 
-    // Time-based, defaults to None
+    /// <summary>
+    /// Time interval used for rolling.
+    /// </summary>
+    /// <remarks>
+    /// Applicable only for time-based rolling.
+    /// </remarks>
     public RollingInterval Interval { get; set; } = RollingInterval.None;
 
-    // Max retained files, default to seven
+    /// <summary>
+    /// Maximum number of rolled files to retain.
+    /// </summary>
+    /// <remarks>
+    /// Older files may be deleted when this limit is exceeded.
+    /// </remarks>
     public int MaxRetainedFiles { get; set; } = 7;
 
+    /// <summary>
+    /// Date format used for time-based rolling.
+    /// </summary>
+    /// <remarks>
+    /// Should align with <see cref="FileNamingConfiguration.DateFormat"/> when both are used.
+    /// </remarks>
     public string DateFormat { get; set; } = "yyyy-MM-dd";
 }
 
@@ -209,18 +363,60 @@ public enum LogMessageLayoutType
     Custom
 }
 
+/// <summary>
+/// Represents the strategy used for log file rolling.
+/// </summary>
+/// <remarks>
+/// Determines how and when log files are rotated.
+/// </remarks>
 public enum RollingType
 {
+    /// <summary>
+    /// No rolling is applied. Logs continue writing to a single file.
+    /// </summary>
     None,
+
+    /// <summary>
+    /// Rolling occurs when the file size exceeds a configured threshold.
+    /// </summary>
     Size,
+
+    /// <summary>
+    /// Rolling occurs based on time intervals (e.g., hourly, daily).
+    /// </summary>
     Time,
-    Hybrid // TODO
+
+    /// <summary>
+    /// Rolling occurs based on a combination of size and time conditions.
+    /// </summary>
+    /// <remarks>
+    /// Not yet implemented.
+    /// </remarks>
+    Hybrid
 }
 
+/// <summary>
+/// Represents the time interval used for time-based rolling.
+/// </summary>
 public enum RollingInterval
 {
+    /// <summary>
+    /// No time-based rolling is applied.
+    /// </summary>
     None,
+
+    /// <summary>
+    /// Roll logs every hour.
+    /// </summary>
     Hour,
+
+    /// <summary>
+    /// Roll logs every day.
+    /// </summary>
     Day,
+
+    /// <summary>
+    /// Roll logs every month.
+    /// </summary>
     Month
 }

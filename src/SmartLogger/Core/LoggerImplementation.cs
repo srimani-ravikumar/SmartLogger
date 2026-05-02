@@ -1,25 +1,50 @@
 ﻿using SmartLogger.Appenders;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using SmartLogger.Formatters;
 
 namespace SmartLogger.Core;
 
 /// <summary>
 /// Core implementation of the <see cref="ISmartLogger"/> interface.
-/// Handles the lifecycle of log messages, filtering, and distribution to appenders.
 /// </summary>
+/// <remarks>
+/// Responsible for:
+/// <list type="bullet">
+/// <item><description>Constructing <see cref="LogMessage"/> instances</description></item>
+/// <item><description>Applying filters</description></item>
+/// <item><description>Dispatching logs to appenders</description></item>
+/// </list>
+/// 
+/// Threading Model:
+/// <list type="bullet">
+/// <item><description>Appender list is snapshotted during logging to avoid concurrent modification issues</description></item>
+/// <item><description>Configuration updates replace appenders under lock</description></item>
+/// </list>
+/// </remarks>
 internal sealed class LoggerImplementation : ISmartLogger
 {
+    /// <summary>
+    /// Logical name of the logger (typically class or namespace).
+    /// </summary>
     private readonly string _name;
+
+    /// <summary>
+    /// Collection of appenders responsible for output.
+    /// </summary>
     private readonly List<ILogAppender> _appenders;
+
+    /// <summary>
+    /// Collection of filters applied before dispatching logs.
+    /// </summary>
     private readonly List<ILogFilter> _filters;
 
     /// <summary>
-    /// Gets the current global log level for this logger.
+    /// Minimum effective log level across all configurations.
     /// </summary>
-    internal LogLevel LogLevel { get; private set; }
+    /// <remarks>
+    /// Derived from root level and appender-specific levels.
+    /// </remarks>
+    internal LogLevel EffectiveMinLogLevel { get; private set; }
 
     #region Telescoping constructors
 
@@ -29,13 +54,14 @@ internal sealed class LoggerImplementation : ISmartLogger
 
     internal LoggerImplementation(string name, LogLevel loglevel) : this(name, loglevel, true) { }
 
-    internal LoggerImplementation(string name, LogLevel logLevel, bool enableDefaultConsoleAppender)
+    internal LoggerImplementation(string name, LogLevel effectiveMinLogLevel, bool enableDefaultConsoleAppender)
     {
         _name = name;
-        LogLevel = logLevel;
+        EffectiveMinLogLevel = effectiveMinLogLevel;
         _appenders = new List<ILogAppender>();
         _filters = new List<ILogFilter>();
 
+        // Optional default appender for quick usability
         if (enableDefaultConsoleAppender)
         {
             _appenders.Add(new ConsoleAppender());
@@ -44,30 +70,44 @@ internal sealed class LoggerImplementation : ISmartLogger
 
     #endregion
 
-
     /// <summary>
-    /// The primary logging facade that constructs the <see cref="LogMessage"/> and notifies appenders.
+    /// Core logging pipeline entry point.
     /// </summary>
+    /// <param name="logLevel">Severity of the log.</param>
+    /// <param name="message">Log message content.</param>
+    /// <remarks>
+    /// Execution flow:
+    /// <list type="number">
+    /// <item><description>Level filtering (fast-fail)</description></item>
+    /// <item><description>Message construction</description></item>
+    /// <item><description>Filter evaluation</description></item>
+    /// <item><description>Appender dispatch</description></item>
+    /// </list>
+    /// </remarks>
     public void Log(LogLevel logLevel, string message)
     {
-        // 1. Minimum Level Check
-        if (!logLevel.IsGreaterOrEqual(LogLevel)) return;
+        // 1. Minimum Level Check (fast path)
+        if (!logLevel.IsGreaterOrEqual(EffectiveMinLogLevel)) return;
 
-        // 2. Build the Message using the Builder (captures ThreadId automatically)
-        var logMessage = new LogMessage.Builder().WithLevel(logLevel)
-                                                 .WithMessage(message)
-                                                 .FromSource(_name)
-                                                 .WithCorrelationId(LogContext.CorrelationId) // Injected from the AsyncLocal storage 
-                                                 .Build();
+        // 2. Build the message (captures thread + correlation context)
+        var logMessage = new LogMessage.Builder()
+            .WithLevel(logLevel)
+            .WithMessage(message)
+            .FromSource(_name)
+            .WithCorrelationId(LogContext.CorrelationId) // AsyncLocal-based propagation
+            .Build();
 
-        // 3. Apply Filters
-        if (_filters.Any(predicate: filter => !filter.ShouldLog(logMessage)))
+        // 3. Apply filters (short-circuit if any filter rejects)
+        if (_filters.Any(filter => !filter.ShouldLog(logMessage)))
         {
             return;
         }
 
-        // 4. Distribute to Enabled Appenders
-        foreach (var appender in _appenders)
+        // 4. Snapshot appenders to avoid concurrent modification issues
+        var appendersSnapshot = _appenders.ToArray();
+
+        // 5. Dispatch to enabled appenders
+        foreach (ILogAppender appender in appendersSnapshot)
         {
             if (appender.IsEnabled(logLevel))
             {
@@ -116,7 +156,34 @@ internal sealed class LoggerImplementation : ISmartLogger
     public void RemoveFilter(ILogFilter filter) => _filters.Remove(filter);
 
     /// <inheritdoc/>
-    public void SetLogLevel(LogLevel level) => LogLevel = level;
+    public void SetLogLevel(LogLevel level) => EffectiveMinLogLevel = level;
+
+    /// <summary>
+    /// Updates logger configuration dynamically.
+    /// </summary>
+    /// <param name="newLevel">New effective log level.</param>
+    /// <param name="newAppenders">New set of appenders.</param>
+    /// <remarks>
+    /// Applies changes atomically where possible:
+    /// <list type="bullet">
+    /// <item><description>Log level updated via atomic write</description></item>
+    /// <item><description>Appender list replaced under lock</description></item>
+    /// </list>
+    /// </remarks>
+    internal void UpdateConfiguration(LogLevel newLevel, List<ILogAppender> newAppenders)
+    {
+        // 1. Update level (atomic write)
+        EffectiveMinLogLevel = newLevel;
+
+        // 2. Replace appenders atomically
+        lock (_appenders)
+        {
+            _appenders.Clear();
+            _appenders.AddRange(newAppenders);
+        }
+
+        // TODO: implement the same for filters
+    }
 
     #endregion
 }

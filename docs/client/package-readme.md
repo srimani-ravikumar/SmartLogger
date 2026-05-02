@@ -1,50 +1,71 @@
-﻿# SmartLogger - Build observability with less complexity
+﻿## SmartLogger: Lightweight Logging for High-Performance Systems
 
-> ***Primary design goal is to come up with lightweight, simple and robust logging framework for high performance systems.***
+> **Build observability without sacrificing performance or simplicity.**
 
-SmartLogger is an extensible logging framework designed to provide structured, reliable, and configurable logging for modern .NET applications.
+SmartLogger is a lightweight, extensible logging framework for .NET applications, designed to provide **structured, reliable, and configurable logging** without unnecessary complexity.
+
+---
 
 ## Design Philosophy
 
-SmartLogger is built with this principle:
+> **Logging must never compromise application stability.**
 
-> Logging must never compromise application stability.
+SmartLogger is built with a strong focus on:
 
-It prioritizes:
+* Predictable behavior under load
+* Minimal runtime overhead
+* Clear and flexible configuration
+* Extensibility without complexity
 
-* Safe execution
-* Clear configuration
-* Predictable behavior
-* Extensibility
+---
+
+## Architecture Overview
+
+SmartLogger follows a clean, layered pipeline:
+
+```
+Log Call
+   ↓
+Logger
+   ↓
+Layout (Pattern + Tokens)
+   ↓
+Formatter (PlainText / JSON / XML)
+   ↓
+Appender (Console / File / etc.)
+```
+
+This design ensures:
+
+* Separation of concerns
+* Easy extensibility
+* Maintainable logging pipeline
 
 ---
 
 ## Key Features
 
-It is built to support:
-
-* Log Levels with Priority System
-* Customizable message structure
-* Runtime configuration updates
-* Multiple output destinations (Console, FileSystem, Database etc.)
-* Multiple output format (plain text, Json etc.)
-* Multi-threaded environments
-* Correlation-based request tracing
-* Resilient logging under load
+* Log levels with priority filtering
+* Customizable log layouts (pattern + tokens)
+* Multiple output formats (PlainText, JSON, XML)
+* Multiple appenders (Console, FileSystem, extensible)
+* Async logging support for high throughput
+* Runtime configuration reload (hot reload)
+* Correlation ID support (AsyncLocal-based)
+* Thread-safe logging pipeline
+* File rolling strategies (size/time-based)
 
 ---
 
-## Why Use SmartLogger?
+## 💡 Why SmartLogger?
 
-SmartLogger helps teams:
+SmartLogger helps you:
 
 * Maintain consistent logging standards
-* Trace requests across services using correlation IDs
-* Dynamically update logging rules without restarting applications
-* Protect applications during high log volume scenarios
-* Detect logging pipeline failures early
-
-It is designed to be **simple to integrate** and **safe & lightweight to use in production systems.**
+* Trace requests across execution flows using correlation IDs
+* Handle high log volumes safely
+* Dynamically update logging without restarting apps
+* Build observable systems with minimal setup
 
 ---
 
@@ -60,55 +81,46 @@ Install-Package SmartLogger
 
 ### 2️⃣ Initialize Logger
 
+#### JSON Configuration
+
 ```csharp
-ILogConfigurationProvider provider = new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true);
+var provider = new JsonConfigurationProvider(
+    "smartlogger.json",
+    enableAutoReload: true);
 
 LoggerManager.Initialize(provider);
-```
-or 
-
-```charp
-    var config = new LogConfigurationHolder
-    {
-        RootLogLevel = LogLevel.INFO,
-        Appenders = new List<AppenderConfiguration>
-    {
-        new AppenderConfiguration
-        {
-            Destination = LogOutputDestination.Console,
-            Threshold = LogLevel.DEBUG
-        },
-        new AppenderConfiguration
-        {
-            Destination = LogOutputDestination.FileSystem,
-            Threshold = LogLevel.INFO,
-            File = new FileConfiguration
-            {
-                BasePath = "logs/app",
-                Extension = "log",
-                Naming = new FileNamingConfiguration
-                {
-                    DateFormat = "yyyy-MM-dd",
-                    IncludeDate = true,
-                    IncludeIndex = true,
-                    Separator = "_"
-                }
-            }
-        }
-    }
-    };
-
-    ILogConfigurationProvider provider = new InMemoryConfigurationProvider(config);
-
-    LoggerManager.Initialize(provider);
 ```
 
 ---
 
-### 3️⃣ Get a Logger Instance
+#### In-Memory Configuration
 
 ```csharp
-ISmartLogger logger = LoggerManager.GetLogger("OrderService");
+var config = new LogConfigurationHolder
+{
+    RootLogLevel = LogLevel.INFO,
+    Appenders = new List<AppenderConfiguration>
+    {
+        new AppenderConfiguration
+        {
+            Destination = new DestinationConfiguration
+            {
+                Type = LogOutputDestination.Console
+            },
+            AppenderLogLevel = LogLevel.DEBUG
+        }
+    }
+};
+
+LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+```
+
+---
+
+### 3️⃣ Get Logger
+
+```csharp
+var logger = LoggerManager.GetLogger("OrderService");
 ```
 
 ---
@@ -123,41 +135,59 @@ logger.Error("Payment gateway timeout.");
 
 ---
 
-## Example Configuration (JSON)
+## Correlation Logging Example
+
+```csharp
+using (LogContext.BeginCorrelationScope("REQ-123"))
+{
+    logger.Info("Processing request...");
+    logger.Error("Request failed");
+}
+```
+
+---
+
+## Example JSON Configuration
 
 ```json
 {
   "rootLogLevel": "DEBUG",
   "appenders": [
     {
-      "destination": "Console",
-      "threshold": "DEBUG",
-      "outputFormat": "PlainText",
-      "layoutType": "Detailed"
+      "destination": {
+        "type": "Console"
+      },
+      "appenderLogLevel": "DEBUG",
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Detailed"
+      }
     }
   ]
 }
 ```
 
 For more information on configuration refer: [SmartLogger_Configuration_Guide](https://github.com/srimani-ravikumar/SmartLogger/blob/main/docs/client/configuration-guide.md)
+
 ---
 
-## Ideal Use Cases
+## 🧪 Ideal Use Cases
 
-SmartLogger is suitable for:
-
+* Learning system design
 * Web APIs
+* Background workers
 * Microservices
-* Background processing systems
-* Internal enterprise tools
-* Learning and system design exploration
+* High-throughput systems
 
 ---
 
-## Summary
+## 📌 Summary
 
-SmartLogger provides a clean, extensible logging solution for .NET applications, with built-in support for correlation, runtime configuration, and multi-threaded safety.
+SmartLogger provides a clean and extensible logging solution for .NET applications, with support for:
 
-It enables teams to **build observable and maintainable systems without complex setup.**
+* Structured logging
+* Correlation tracking
+* Runtime configuration
+* High-performance scenarios
 
----
+> Designed to help you build **observable, maintainable, and resilient systems**.

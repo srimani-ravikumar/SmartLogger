@@ -27,6 +27,7 @@ internal sealed class AsyncAppenderWrapper : ILogAppender
 {
     /// <summary>
     /// Maximum number of messages allowed in the queue before applying backpressure.
+    /// TODO: This needs to configurable item as part of async mode
     /// </summary>
     private const int MaxQueueSize = 10_000;
 

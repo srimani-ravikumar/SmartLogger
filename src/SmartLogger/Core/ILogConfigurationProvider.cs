@@ -2,7 +2,7 @@
 
 /// <summary>
 /// Defines a contract for loading SmartLogger configuration
-/// from any underlying source (JSON, memory, database, etc.).
+/// from any underlying source (JSON or in-memory).
 /// </summary>
 public interface ILogConfigurationProvider
 {

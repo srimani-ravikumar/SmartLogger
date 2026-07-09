@@ -300,7 +300,7 @@ logs/static.log
       },
       "formatter": {
         "outputFormat": "Json",
-        "jsonFields": ["timestamp", "level", "message"]
+        "includedJsonFields": ["timestamp", "level", "message"]
       }
     }
   ]
@@ -320,11 +320,20 @@ logs/static.log
       },
       "formatter": {
         "outputFormat": "Json",
-        "jsonFields": ["timestamp", "level", "message"],
-        "jsonFieldMapping": {
-          "timestamp": "@timestamp",
-          "level": "severity",
-          "message": "msg"
+        "includedJsonFields": ["timestamp", "level", "message"],
+        "jsonFieldMappings": {
+          {
+            "sourceField": "timestamp",
+            "targetField": "@timestamp"
+          },
+          {
+            "sourceField": "level",
+            "targetField": "severity"
+          },
+          {
+            "sourceField": "message",
+            "targetField": "msg"
+          }
         }
       }
     }
@@ -334,7 +343,7 @@ logs/static.log
 
 ---
 
-# Filtering
+# Filtering (TODO)
 
 ## 14. Filter by Log Level
 
@@ -418,8 +427,14 @@ logs/static.log
 {
   "rootLogLevel": "INFO",
   "loggerOverrides": {
-    "SmartLogger.PaymentService": "DEBUG",
-    "SmartLogger.Database": "ERROR"
+    {
+      "loggerName": "SmartLogger.PaymentService",
+      "logLevel": "DEBUG"
+    },
+    {
+      "loggerName": "SmartLogger.Database",
+      "logLevel": "ERROR"
+    }
   }
 }
 ```
@@ -493,8 +508,8 @@ logs/static.log
 
 # JSON Configuration Notes
 
-* `jsonFields` → controls which fields are included
-* `jsonFieldMapping` → renames fields
+* `includedJsonFields` → controls which fields are included
+* `jsonFieldMappings` → renames fields
 * Default fields provide balanced observability
 
 ---

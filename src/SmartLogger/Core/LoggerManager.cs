@@ -106,7 +106,7 @@ public static class LoggerManager
     /// <item><description>Existing loggers via soft update</description></item>
     /// </list>
     /// </remarks>
-    public static void ReloadConfiguration(ILogConfigurationProvider provider)
+    internal static void ReloadConfiguration(ILogConfigurationProvider provider)
     {
         if (_factory is null)
             throw new InvalidOperationException("LoggerFactory is not initialized.");

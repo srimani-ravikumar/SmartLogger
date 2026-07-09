@@ -40,8 +40,8 @@ internal class FormatterFactory
 
             // JSON → Select fields → Build object → Serialize
             LogOutputFormat.Json => new JsonFormatter(
-                appenderConfig.Formatter.JsonFields,
-                appenderConfig.Formatter.JsonFieldMapping),
+                appenderConfig.Formatter.IncludedJsonFields,
+                appenderConfig.Formatter.JsonFieldMappings),
 
             // XML → Structured representation (layout may not be used directly)
             LogOutputFormat.Xml => new XmlFormatter(),

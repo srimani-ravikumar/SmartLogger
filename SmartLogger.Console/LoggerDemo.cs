@@ -7,12 +7,12 @@ internal class LoggerDemo
     {
         Console.WriteLine("=== SmartLogger Framework Demo ===\n");
 
-        //DemoProductionBootstrap();
+        DemoProductionBootstrap();
         //DemoStructuredLogging();
         //DemoAsyncCorrelationFlow().Wait();
         //DemoCustomPatternLayout();
         //DemoMultiAppender();
-        DemoHighThroughputLogging();
+        //DemoHighThroughputLogging();
         //DemoFailureScenario();
 
         Console.WriteLine("\n=== Demo Completed ===");
@@ -28,8 +28,12 @@ internal class LoggerDemo
         Console.WriteLine("1. Production Bootstrap Demo");
         Console.WriteLine("-----------------------------------");
 
-        var provider = new JsonConfigurationProvider(
-            Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
+        //var provider = new JsonConfigurationProvider(
+        //    Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
+        //    enableAutoReload: true);
+
+        var provider = new XmlConfigurationProvider(
+            Path.Combine(AppContext.BaseDirectory, "xmlconfigurationfile.xml"),
             enableAutoReload: true);
 
         LoggerManager.Initialize(provider);

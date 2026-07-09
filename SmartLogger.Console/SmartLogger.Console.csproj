@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="bin\Debug\net8.0\xmlconfigurationfile.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="bin\Debug\net8.0\smartlogger.json" />
   </ItemGroup>
 

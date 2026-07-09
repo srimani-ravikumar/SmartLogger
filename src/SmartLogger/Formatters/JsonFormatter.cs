@@ -1,5 +1,6 @@
 ﻿using SmartLogger.Core;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 /// <summary>
@@ -38,18 +39,22 @@ internal class JsonFormatter : ILogOutputFormatterStrategy
     /// Initializes a new instance of the <see cref="JsonFormatter"/> class.
     /// </summary>
     /// <param name="fields">Optional list of fields to include.</param>
-    /// <param name="mapping">Optional field name mapping.</param>
+    /// <param name="mappings">Optional field name mapping.</param>
     /// <param name="prettyPrint">Whether JSON output should be indented.</param>
     public JsonFormatter(
-        List<string>? fields,
-        Dictionary<string, string>? mapping,
-        bool prettyPrint = false)
+    List<string>? fields,
+    List<JsonFieldMappingConfiguration>? mappings,
+    bool prettyPrint = false)
     {
         _fields = fields != null && fields.Count > 0
             ? new HashSet<string>(fields)
             : null;
 
-        _mapping = mapping;
+        _mapping = mappings != null && mappings.Count > 0
+            ? mappings.ToDictionary(
+                mapping => mapping.SourceField,
+                mapping => mapping.TargetField)
+            : null;
 
         _options = new JsonSerializerOptions
         {

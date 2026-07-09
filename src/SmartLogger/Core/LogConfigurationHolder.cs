@@ -21,14 +21,16 @@ public sealed class LogConfigurationHolder
     public LogLevel RootLogLevel { get; set; } = LogLevel.INFO;
 
     /// <summary>
-    /// Gets or sets logger-specific level overrides.
-    /// Key = logger name (namespace/class), Value = minimum log level.
+    /// Gets or sets logger-specific log level overrides.
     /// </summary>
     /// <remarks>
+    /// Allows individual loggers to override the root log level.
+    ///
     /// Example:
-    /// "MyApp.Services" → DEBUG
+    /// - MyApp.Services → Debug
+    /// - MyApp.Controllers → Warning
     /// </remarks>
-    public Dictionary<string, LogLevel> LoggerOverrides { get; set; } = new();
+    public List<LoggerOverrideConfiguration> LoggerOverrides { get; set; } = new();
 
     /// <summary>
     /// Gets or sets all configured appenders.
@@ -52,6 +54,29 @@ public sealed class LogConfigurationHolder
     /// When enabled, logs are processed in background threads to improve performance.
     /// </remarks>
     public bool EnableAsyncLoggingProcess { get; set; } = false;
+}
+
+
+/// <summary>
+/// Represents a logger-specific log level override.
+/// </summary>
+/// <remarks>
+/// Allows an individual logger to override the root log level.
+/// </remarks>
+public sealed class LoggerOverrideConfiguration
+{
+    /// <summary>
+    /// Gets or sets the logger name.
+    /// </summary>
+    /// <remarks>
+    /// Typically the fully qualified namespace or class name.
+    /// </remarks>
+    public string LoggerName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the minimum log level for the logger.
+    /// </summary>
+    public LogLevel LogLevel { get; set; } = LogLevel.INFO;
 }
 
 /// <summary>
@@ -152,17 +177,39 @@ public sealed class FormatterConfiguration
     /// <remarks>
     /// Default fields provide a balanced observability view.
     /// </remarks>
-    public List<string> JsonFields { get; set; } =
+    public List<string> IncludedJsonFields { get; set; } =
         new() { "timestamp", "level", "thread", "correlation", "source", "message" };
 
     /// <summary>
-    /// Optional mapping for JSON field names.
+    /// Gets or sets custom JSON field name mappings.
     /// </summary>
     /// <remarks>
+    /// Allows default JSON field names to be renamed.
+    ///
     /// Example:
-    /// "timestamp" → "ts"
+    /// timestamp → ts
+    /// correlation → cid
     /// </remarks>
-    public Dictionary<string, string> JsonFieldMapping { get; set; } = new();
+    public List<JsonFieldMappingConfiguration> JsonFieldMappings { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a JSON field name mapping.
+/// </summary>
+/// <remarks>
+/// Allows a default JSON field name to be mapped to a custom name.
+/// </remarks>
+public sealed class JsonFieldMappingConfiguration
+{
+    /// <summary>
+    /// Gets or sets the original JSON field name.
+    /// </summary>
+    public string SourceField { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the custom JSON field name.
+    /// </summary>
+    public string TargetField { get; set; } = string.Empty;
 }
 
 /// <summary>

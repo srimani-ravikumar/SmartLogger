@@ -165,8 +165,8 @@ internal class LoggerFactory
     /// </summary>
     private LogLevel ResolveLogLevel(string loggerName, LogConfigurationHolder config)
     {
-        if (config.LoggerOverrides.TryGetValue(loggerName, out var level))
-            return level;
+        if (config.LoggerOverrides?.LastOrDefault(x => x.LoggerName == loggerName) is LoggerOverrideConfiguration overrideConfiguration)
+            return overrideConfiguration.LogLevel;
 
         return config.Appenders.Any()
             ? config.Appenders.Min(a => a.AppenderLogLevel ?? config.RootLogLevel)

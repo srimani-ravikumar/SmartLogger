@@ -175,5 +175,172 @@ namespace SmartLogger.Tests.Core
             Assert.Throws<NullReferenceException>(() =>
                 LoggerManager.ReloadConfiguration(null));
         }
+
+        [Test]
+        public void Initialize_CalledTwice_ShouldReplaceExistingFactory()
+        {
+            // Arrange
+            var provider1 = new Mock<ILogConfigurationProvider>();
+            provider1.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            var provider2 = new Mock<ILogConfigurationProvider>();
+            provider2.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            // Act
+            LoggerManager.Initialize(provider1.Object);
+            LoggerManager.Initialize(provider2.Object);
+
+            var logger = LoggerManager.GetLogger("TestLogger");
+
+            // Assert
+            Assert.IsNotNull(logger);
+
+            provider1.Verify(x => x.Load(), Times.Once);
+            provider2.Verify(x => x.Load(), Times.Once);
+        }
+
+        [Test]
+        public void GetLogger_WithDifferentNames_ShouldReturnDifferentInstances()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            var logger1 = LoggerManager.GetLogger("LoggerA");
+            var logger2 = LoggerManager.GetLogger("LoggerB");
+
+            // Assert
+            Assert.That(logger1, Is.Not.SameAs(logger2));
+        }
+
+        // Since ConcurrentDictionary throws the exception.
+        [Test]
+        public void GetLogger_WithNullName_ShouldThrowArgumentNullException()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() =>
+                LoggerManager.GetLogger((string)null));
+        }
+
+        [Test]
+        public void GetLogger_WithEmptyName_ShouldNotReturnLogger()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            var logger = LoggerManager.GetLogger(string.Empty);
+
+            // Assert
+            Assert.IsNotNull(logger);
+            Assert.IsInstanceOf<ISmartLogger>(logger);
+        }
+
+        [Test]
+        public void GetLogger_WithWhitespaceName_ShouldReturnLogger()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            var logger = LoggerManager.GetLogger("     ");
+
+            // Assert
+            Assert.IsNotNull(logger);
+            Assert.IsInstanceOf<ISmartLogger>(logger);
+        }
+
+        [Test]
+        public void GetLogger_WithVeryLongName_ShouldReturnLogger()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            var loggerName = new string('A', 5000);
+
+            // Act
+            var logger = LoggerManager.GetLogger(loggerName);
+
+            // Assert
+            Assert.IsNotNull(logger);
+            Assert.IsInstanceOf<ISmartLogger>(logger);
+        }
+
+        [Test]
+        public void GetLogger_WithUnicodeName_ShouldReturnLogger()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            var logger = LoggerManager.GetLogger("ஸ்மார்ட்Logger_日本語_日志");
+
+            // Assert
+            Assert.IsNotNull(logger);
+            Assert.IsInstanceOf<ISmartLogger>(logger);
+        }
+
+        [Test]
+        public void GetLogger_WithType_ShouldReturnSameInstanceAsStringFullName()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            var loggerFromType = LoggerManager.GetLogger(typeof(LoggerManager));
+            var loggerFromString = LoggerManager.GetLogger(typeof(LoggerManager).FullName);
+
+            // Assert
+            Assert.That(loggerFromType, Is.SameAs(loggerFromString));
+        }
+
+        [Test]
+        public void ReloadConfiguration_ShouldCallLoadExactlyOnceDuringReload()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            LoggerManager.ReloadConfiguration(_provider.Object);
+
+            // Assert
+            _provider.Verify(x => x.Load(), Times.Exactly(2));
+        }
+
+        [Test]
+        public void ReloadConfiguration_CalledMultipleTimes_ShouldCallLoadEachTime()
+        {
+            // Arrange
+            _provider.Setup(x => x.Load()).Returns(new LogConfigurationHolder());
+
+            LoggerManager.Initialize(_provider.Object);
+
+            // Act
+            LoggerManager.ReloadConfiguration(_provider.Object);
+            LoggerManager.ReloadConfiguration(_provider.Object);
+            LoggerManager.ReloadConfiguration(_provider.Object);
+
+            // Assert
+            _provider.Verify(x => x.Load(), Times.Exactly(4));
+        }
     }
 }

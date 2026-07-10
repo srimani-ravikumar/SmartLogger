@@ -114,4 +114,13 @@ public static class LoggerManager
         var newConfig = provider.Load();
         _factory.UpdateConfiguration(newConfig);
     }
+
+    /// <summary>
+    /// Resets the logger manager to its uninitialized state.
+    /// Intended for unit testing only.
+    /// </summary>
+    internal static void Reset()
+    {
+        _factory = null;
+    }
 }

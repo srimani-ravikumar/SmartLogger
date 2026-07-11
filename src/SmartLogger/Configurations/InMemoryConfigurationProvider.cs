@@ -39,7 +39,7 @@ public sealed class InMemoryConfigurationProvider : ILogConfigurationProvider
     public LogConfigurationHolder Load()
     {
         // Ensure configuration is valid before usage
-        Validate(_configuration);
+        ConfigurationValidator.Validate(_configuration);
 
         return _configuration;
     }
@@ -74,32 +74,5 @@ public sealed class InMemoryConfigurationProvider : ILogConfigurationProvider
         };
 
         return new InMemoryConfigurationProvider(config);
-    }
-
-    /// <summary>
-    /// Validates the provided configuration for structural correctness.
-    /// </summary>
-    /// <param name="config">Configuration to validate.</param>
-    /// <exception cref="InvalidOperationException">
-    /// Thrown when configuration is invalid or incomplete.
-    /// </exception>
-    private static void Validate(LogConfigurationHolder config)
-    {
-        // Ensure at least one appender is configured
-        if (config.Appenders is null || !config.Appenders.Any())
-        {
-            throw new InvalidOperationException(
-                "At least one appender must be configured.");
-        }
-
-        // Validate each appender destination
-        foreach (var appender in config.Appenders)
-        {
-            if (appender.Destination.Type == LogOutputDestination.Unknown)
-            {
-                throw new InvalidOperationException(
-                    "Appender destination must be specified.");
-            }
-        }
     }
 }

@@ -52,7 +52,7 @@ internal sealed class FileAppender : ILogAppender
     /// <summary>
     /// Optional rolling strategy controlling file rotation.
     /// </summary>
-    private readonly IRollingStrategy? _rollingStrategy;
+    private IRollingStrategy? _rollingStrategy;
 
     /// <summary>
     /// Synchronization primitive to ensure thread-safe file operations.
@@ -94,7 +94,11 @@ internal sealed class FileAppender : ILogAppender
             return;
 
         // Capture formatter reference to avoid race conditions
-        var currentFormatter = _formatter;
+        ILogOutputFormatterStrategy currentFormatter;
+        lock (_lockObject)
+        {
+            currentFormatter = _formatter;
+        }
 
         // Perform formatting outside lock (CPU-bound)
         var formattedMessage = currentFormatter.Format(message);
@@ -160,6 +164,42 @@ internal sealed class FileAppender : ILogAppender
     public ILogOutputFormatterStrategy GetFormatter()
     {
         return _formatter;
+    }
+
+    /// <summary>
+    /// Updates the appender configuration at runtime.
+    /// </summary>
+    /// <param name="logLevel">
+    /// New minimum log level
+    /// </param>
+    /// <param name="formatter">
+    /// New formatter strategy.
+    /// </param>
+    /// <param name="rollingStrategy">
+    /// New rolling strategy.
+    /// </param>
+    /// <remarks>
+    /// Updates mutable configuration while preserving the existing
+    /// appender instance and underlying file identity.
+    ///
+    /// Synchronization is performed using the existing lock to ensure
+    /// configuration changes are applied atomically with respect to
+    /// concurrent write operations.
+    /// </remarks>
+    internal void UpdateConfiguration(
+        LogLevel logLevel,
+        ILogOutputFormatterStrategy formatter,
+        IRollingStrategy? rollingStrategy)
+    {
+        if (formatter == null)
+            throw new ArgumentNullException(nameof(formatter));
+
+        lock (_lockObject)
+        {
+            _logLevel = logLevel;
+            _formatter = formatter;
+            _rollingStrategy = rollingStrategy;
+        }
     }
 
     /// <summary>

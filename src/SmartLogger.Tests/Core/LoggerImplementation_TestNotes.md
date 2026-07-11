@@ -497,7 +497,3 @@ The following responsibilities are intentionally tested separately within their 
 | Thread safety              |    ✅    |
 
 <p align="center"><strong>© 2026 Srimani. All rights reserved.</strong></p>
-
-### Suggested refinement
-
-One recommendation from a Principal Engineer's perspective: split the **Thread Safety Tests** into a separate **Concurrency Tests** section. The current implementation explicitly documents concurrent behavior (snapshotting appenders and atomic configuration updates), and isolating these tests makes the test plan easier to navigate while highlighting one of the class's key architectural guarantees.

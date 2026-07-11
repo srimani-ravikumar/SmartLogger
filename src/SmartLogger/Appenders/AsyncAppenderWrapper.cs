@@ -34,7 +34,7 @@ internal sealed class AsyncAppenderWrapper : ILogAppender
     /// <summary>
     /// The underlying appender that performs actual log writes.
     /// </summary>
-    private readonly ILogAppender _innerAppender;
+    internal ILogAppender InnerAppender { get; }
 
     /// <summary>
     /// In-memory queue buffering log messages before processing.
@@ -63,7 +63,7 @@ internal sealed class AsyncAppenderWrapper : ILogAppender
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="innerAppender"/> is null.</exception>
     public AsyncAppenderWrapper(ILogAppender innerAppender)
     {
-        _innerAppender = innerAppender ?? throw new ArgumentNullException(nameof(innerAppender));
+        InnerAppender = innerAppender ?? throw new ArgumentNullException(nameof(innerAppender));
 
         // Dedicated background worker for consuming the queue
         _worker = new Thread(ProcessQueue)
@@ -98,19 +98,19 @@ internal sealed class AsyncAppenderWrapper : ILogAppender
     }
 
     /// <inheritdoc/>
-    public void SetLogLevel(LogLevel level) => _innerAppender.SetLogLevel(level);
+    public void SetLogLevel(LogLevel level) => InnerAppender.SetLogLevel(level);
 
     /// <inheritdoc/>
-    public LogLevel GetLogLevel(LogLevel level) => _innerAppender.GetLogLevel(level);
+    public LogLevel GetLogLevel(LogLevel level) => InnerAppender.GetLogLevel(level);
 
     /// <inheritdoc/>
-    public bool IsEnabled(LogLevel level) => _innerAppender.IsEnabled(level);
+    public bool IsEnabled(LogLevel level) => InnerAppender.IsEnabled(level);
 
     /// <inheritdoc/>
-    public void SetFormatter(ILogOutputFormatterStrategy formatter) => _innerAppender.SetFormatter(formatter);
+    public void SetFormatter(ILogOutputFormatterStrategy formatter) => InnerAppender.SetFormatter(formatter);
 
     /// <inheritdoc/>
-    public ILogOutputFormatterStrategy GetFormatter() => _innerAppender.GetFormatter();
+    public ILogOutputFormatterStrategy GetFormatter() => InnerAppender.GetFormatter();
 
     /// <summary>
     /// Stops the background worker and ensures all queued messages are processed.
@@ -162,7 +162,7 @@ internal sealed class AsyncAppenderWrapper : ILogAppender
             try
             {
                 // Delegate actual write to the underlying appender
-                _innerAppender.Append(message);
+                InnerAppender.Append(message);
             }
             catch
             {

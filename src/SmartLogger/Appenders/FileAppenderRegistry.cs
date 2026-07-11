@@ -61,20 +61,60 @@ internal static class FileAppenderRegistry
         // Key represents the logical file identity (shared appender per file)
         var key = $"{fileConfig.BasePath}.{fileConfig.Extension}";
 
-        return _cache.GetOrAdd(key, _ =>
+        var appender = _cache.GetOrAdd(key, _ =>
         {
             // Create base file appender
-            ILogAppender appender = new FileAppender(
+            ILogAppender created = new FileAppender(
                 fileConfig,
                 logLevel,
                 formatter,
-                rollingStrategy
-            );
+                rollingStrategy);
 
             // Apply async wrapper only once during creation
             return asyncEnabled
-                ? new AsyncAppenderWrapper(appender)
-                : appender;
+                ? new AsyncAppenderWrapper(created)
+                : created;
         });
+
+        /* TODO: Review design decision regarding refresh triggers.
+        * Current behavior: Refreshes on initial creation and config reload.
+        * Desired behavior: Refresh only upon configuration reload.
+        */
+        RefreshConfiguration(
+            appender,
+            logLevel,
+            formatter,
+            rollingStrategy);
+
+        return appender;
+    }
+
+    /// <summary>
+    /// Refreshes the configuration of an existing cached file appender.
+    /// </summary>
+    private static void RefreshConfiguration(
+        ILogAppender appender,
+        LogLevel logLevel,
+        ILogOutputFormatterStrategy formatter,
+        IRollingStrategy? rollingStrategy)
+    {
+        switch (appender)
+        {
+            case FileAppender fileAppender:
+                fileAppender.UpdateConfiguration(
+                    logLevel,
+                    formatter,
+                    rollingStrategy);
+                break;
+
+            case AsyncAppenderWrapper asyncWrapper
+                when asyncWrapper.InnerAppender is FileAppender fileAppender:
+
+                fileAppender.UpdateConfiguration(
+                    logLevel,
+                    formatter,
+                    rollingStrategy);
+                break;
+        }
     }
 }

@@ -223,8 +223,8 @@ namespace SmartLogger.Tests.Core
         public void Build_WithoutTimestampOverride_ShouldUseCurrentUtcTimestamp()
         {
             // Arrange
-            var builder = new LogMessage.Builder();
             var before = DateTime.UtcNow;
+            var builder = new LogMessage.Builder();
 
             // Act
             var message = builder.WithLevel(LogLevel.INFO).WithMessage("hello").Build();

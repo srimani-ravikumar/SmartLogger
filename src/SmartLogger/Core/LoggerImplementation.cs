@@ -137,26 +137,47 @@ internal sealed class LoggerImplementation : ISmartLogger
 
     #region Management Methods
 
-    /// <inheritdoc/>
-    public IList<ILogAppender> GetLogAppenders() => _appenders.AsReadOnly();
+    /// <summary>
+    /// Retrieves a read-only list of all currently attached appenders.
+    /// </summary>
+    /// <returns>A collection of <see cref="ILogAppender"/> instances.</returns>
+    internal IReadOnlyList<ILogAppender> GetLogAppenders() => _appenders.AsReadOnly();
 
-    /// <inheritdoc/>
-    public void AddAppender(ILogAppender appender) => _appenders.Add(appender);
+    /// <summary>
+    /// Attaches an output destination (appender) to the logger.
+    /// </summary>
+    /// <param name="appender">The implementation of <see cref="ILogAppender"/> to add.</param>
+    internal void AddAppender(ILogAppender appender) => _appenders.Add(appender);
 
-    /// <inheritdoc/>
-    public void RemoveAppender(ILogAppender appender) => _appenders.Remove(appender);
+    /// <summary>
+    /// Detaches an output destination (appender) from the logger.
+    /// </summary>
+    /// <param name="appender">The appender to remove.</param>
+    internal void RemoveAppender(ILogAppender appender) => _appenders.Remove(appender);
 
-    /// <inheritdoc/>
-    public IList<ILogFilter> GetLogFilters() => _filters.AsReadOnly();
+    /// <summary>
+    /// Retrieves a read-only list of all currently active filters.
+    /// </summary>
+    /// <returns>A collection of <see cref="ILogFilter"/> instances.</returns>
+    internal IReadOnlyList<ILogFilter> GetLogFilters() => _filters.AsReadOnly();
 
-    /// <inheritdoc/>
-    public void AddFilter(ILogFilter filter) => _filters.Add(filter);
+    /// <summary>
+    /// Adds a logic-based filter to the logging pipeline.
+    /// </summary>
+    /// <param name="filter">The <see cref="ILogFilter"/> to evaluate before logging.</param>
+    internal void AddFilter(ILogFilter filter) => _filters.Add(filter);
 
-    /// <inheritdoc/>
-    public void RemoveFilter(ILogFilter filter) => _filters.Remove(filter);
+    /// <summary>
+    /// Removes a logic-based filter from the logging pipeline.
+    /// </summary>
+    /// <param name="filter">The filter to remove.</param>
+    internal void RemoveFilter(ILogFilter filter) => _filters.Remove(filter);
 
-    /// <inheritdoc/>
-    public void SetLogLevel(LogLevel level) => EffectiveMinLogLevel = level;
+    /// <summary>
+    /// Updates the minimum <see cref="LogLevel"/> required for messages to be processed.
+    /// </summary>
+    /// <param name="logLevel">The new minimum threshold level.</param>
+    internal void SetLogLevel(LogLevel logLevel) => EffectiveMinLogLevel = logLevel;
 
     /// <summary>
     /// Updates logger configuration dynamically.

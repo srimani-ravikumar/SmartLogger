@@ -1,5 +1,11 @@
 ﻿## SmartLogger: Lightweight Logging for High-Performance Systems
 
+## Document Information
+
+| Project | Version | Date | Author | Status | Description |
+|---------|---------|------------|---------|-------------|-------------|
+| SmartLogger | 1.0.0 | 2026-07-12 | Srimani | Final | Provides an overview of SmartLogger, its architecture, key features, quick start guide, and configuration resources for developers. |
+
 > **Build observability without sacrificing performance or simplicity.**
 
 SmartLogger is a lightweight, extensible logging framework for .NET applications, designed to provide **structured, reliable, and configurable logging** without unnecessary complexity.
@@ -45,15 +51,14 @@ This design ensures:
 
 ## Key Features
 
-* Log levels with priority filtering
-* Customizable log layouts (pattern + tokens)
+* Priority-based log level management and filtering
 * Multiple output formats (PlainText, JSON, XML)
 * Multiple appenders (Console, FileSystem, extensible)
-* Async logging support for high throughput
-* Runtime configuration reload (hot reload)
-* Correlation ID support (AsyncLocal-based)
-* Thread-safe logging pipeline
-* File rolling strategies (size/time-based)
+* Offers both Synchronous and asynchronous logging pipeline
+* Runtime configuration reload with zero downtime
+* Correlation context for distributed systems
+* Overload protection and logging health monitoring
+* Configurable file rolling and simple & intuitive configurations
 
 ---
 
@@ -71,17 +76,17 @@ SmartLogger helps you:
 
 ## Quick Start
 
+Get SmartLogger up and running in just a few steps.
+
 ### 1️⃣ Install via NuGet
 
 ```powershell
 Install-Package SmartLogger
 ```
 
----
+### 2️⃣ Configure & Initialize SmartLogger
 
-### 2️⃣ Initialize Logger
-
-#### JSON Configuration
+#### Option A – JSON Configuration *(Recommended)*
 
 ```csharp
 var provider = new JsonConfigurationProvider(
@@ -91,14 +96,15 @@ var provider = new JsonConfigurationProvider(
 LoggerManager.Initialize(provider);
 ```
 
----
+This approach is recommended for most applications as it supports **configuration hot reload** without restarting the application.
 
-#### In-Memory Configuration
+#### Option B – In-Memory Configuration
 
 ```csharp
-var config = new LogConfigurationHolder
+var configuration = new LogConfigurationHolder
 {
     RootLogLevel = LogLevel.INFO,
+
     Appenders = new List<AppenderConfiguration>
     {
         new AppenderConfiguration
@@ -107,31 +113,112 @@ var config = new LogConfigurationHolder
             {
                 Type = LogOutputDestination.Console
             },
-            AppenderLogLevel = LogLevel.DEBUG
+
+            Formatter = new FormatterConfiguration
+            {
+                OutputFormat = LogOutputFormat.PlainText,
+                LayoutType = LogMessageLayoutType.Simple
+            },
+
+            AppenderLogLevel = LogLevel.INFO
         }
     }
 };
 
-LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+LoggerManager.Initialize(
+    new InMemoryConfigurationProvider(configuration));
 ```
 
----
+Ideal for unit tests, sample applications, or scenarios where the logging configuration is created programmatically.
 
-### 3️⃣ Get Logger
+### 3️⃣ Retrieve a Logger
+
+Using the current class (recommended)
+
+```csharp
+var logger = LoggerManager.GetLogger(typeof(OrderService));
+```
+
+Or using a custom logger name
 
 ```csharp
 var logger = LoggerManager.GetLogger("OrderService");
 ```
 
----
-
-### 4️⃣ Log Messages
+### 4️⃣ Write Log Messages
 
 ```csharp
+logger.Debug("Initializing payment workflow...");
 logger.Info("Order created successfully.");
 logger.Warning("Inventory running low.");
 logger.Error("Payment gateway timeout.");
 ```
+
+### 5️⃣ Enable File Logging *(Optional)*
+
+```csharp
+var configuration = new LogConfigurationHolder
+{
+    RootLogLevel = LogLevel.INFO,
+
+    Appenders = new List<AppenderConfiguration>
+    {
+        new AppenderConfiguration
+        {
+            Destination = new DestinationConfiguration
+            {
+                Type = LogOutputDestination.FileSystem,
+
+                File = new FileConfiguration
+                {
+                    Directory = "Logs",
+                    FileName = "Application",
+                    Extension = "log",
+
+                    Naming = new FileNamingConfiguration
+                    {
+                        Strategy = FileNamingStrategyType.Date
+                    },
+
+                    Rolling = new FileRollingConfiguration
+                    {
+                        Strategy = RollingStrategyType.Daily
+                    },
+
+                    Archive = new ArchiveConfiguration
+                    {
+                        Enabled = true,
+                        Directory = "Logs\\Archive",
+                        Compress = true
+                    },
+
+                    Retention = new RetentionConfiguration
+                    {
+                        RetentionDays = 30
+                    }
+                }
+            },
+
+            Formatter = new FormatterConfiguration
+            {
+                OutputFormat = LogOutputFormat.PlainText,
+                LayoutType = LogMessageLayoutType.Detailed
+            }
+        }
+    }
+};
+
+LoggerManager.Initialize(
+    new InMemoryConfigurationProvider(configuration));
+```
+
+The default file logging behavior includes:
+
+- Daily rolling
+- Date-based file naming
+- Automatic archive creation
+- ZIP compression
+- 30-day retention policy
 
 ---
 
@@ -162,12 +249,50 @@ using (LogContext.BeginCorrelationScope("REQ-123"))
         "outputFormat": "PlainText",
         "layoutType": "Detailed"
       }
+    },
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "extension": "log",
+          "naming": {
+            "strategy": "Date"
+          },
+          "rolling": {
+            "strategy": "Daily"
+          },
+          "archive": {
+            "enabled": true,
+            "directory": "Logs\\Archive",
+            "compress": true
+          },
+          "retention": {
+            "retentionDays": 30
+          }
+        }
+      },
+      "formatter": {
+        "outputFormat": "Json"
+      }
     }
   ]
 }
 ```
 
-For more information on configuration refer: [SmartLogger_Configuration_Guide](https://github.com/srimani-ravikumar/SmartLogger/blob/main/docs/client/configuration-guide.md)
+The above example demonstrates a common production setup with:
+
+- Console logging using a detailed plain text layout.
+- File logging with JSON output.
+- Daily file rolling.
+- Automatic archive creation.
+- ZIP compression.
+- 30-day archive retention.
+
+For a complete list of supported configuration options, examples, and best practices, refer to the **Configuration Guide**:
+
+📖 **Configuration Guide**  [SmartLogger_Configuration_Guide](https://github.com/srimani-ravikumar/SmartLogger/blob/main/docs/client/configuration-guide.md)
 
 ---
 
@@ -191,3 +316,10 @@ SmartLogger provides a clean and extensible logging solution for .NET applicatio
 * High-performance scenarios
 
 > Designed to help you build **observable, maintainable, and resilient systems**.
+
+---
+
+<p align="center">
+<strong>© 2026 Srimani. All rights reserved.</strong><br/>
+<em>SmartLogger — Lightweight Logging for High-Performance .NET Applications</em>
+</p>

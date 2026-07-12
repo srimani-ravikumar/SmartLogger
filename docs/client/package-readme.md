@@ -4,7 +4,7 @@
 
 | Project | Version | Date | Author | Status | Description |
 |---------|---------|------------|---------|-------------|-------------|
-| SmartLogger | 1.0.0 | 2026-07-12 | Srimani | Final | Provides an overview of SmartLogger, its architecture, key features, quick start guide, and configuration resources for developers. |
+| SmartLogger | 4.0.0 | 2026-07-12 | Srimani | Final | Provides an overview of SmartLogger, its architecture, key features, quick start guide, and configuration resources for developers. |
 
 > **Build observability without sacrificing performance or simplicity.**
 
@@ -12,7 +12,7 @@ SmartLogger is a lightweight, extensible logging framework for .NET applications
 
 ---
 
-## Design Philosophy
+## 💡 Why SmartLogger? - Design Philosophy
 
 > **Logging must never compromise application stability.**
 
@@ -30,13 +30,15 @@ SmartLogger is built with a strong focus on:
 SmartLogger follows a clean, layered pipeline:
 
 ```
-Log Call
+LoggerManager.Initialize
    ↓
-Logger
+LoggerManager.GetLogger
+   ↓
+logger.Info("This is your first log message!")
    ↓
 Layout (Pattern + Tokens)
    ↓
-Formatter (PlainText / JSON / XML)
+Formatter (PlainText / JSON / etc.)
    ↓
 Appender (Console / File / etc.)
 ```
@@ -59,18 +61,6 @@ This design ensures:
 * Correlation context for distributed systems
 * Overload protection and logging health monitoring
 * Configurable file rolling and simple & intuitive configurations
-
----
-
-## 💡 Why SmartLogger?
-
-SmartLogger helps you:
-
-* Maintain consistent logging standards
-* Trace requests across execution flows using correlation IDs
-* Handle high log volumes safely
-* Dynamically update logging without restarting apps
-* Build observable systems with minimal setup
 
 ---
 
@@ -125,8 +115,7 @@ var configuration = new LogConfigurationHolder
     }
 };
 
-LoggerManager.Initialize(
-    new InMemoryConfigurationProvider(configuration));
+LoggerManager.Initialize(new InMemoryConfigurationProvider(configuration));
 ```
 
 Ideal for unit tests, sample applications, or scenarios where the logging configuration is created programmatically.
@@ -208,8 +197,7 @@ var configuration = new LogConfigurationHolder
     }
 };
 
-LoggerManager.Initialize(
-    new InMemoryConfigurationProvider(configuration));
+LoggerManager.Initialize(new InMemoryConfigurationProvider(configuration));
 ```
 
 The default file logging behavior includes:
@@ -319,7 +307,6 @@ SmartLogger provides a clean and extensible logging solution for .NET applicatio
 
 ---
 
-<p align="center">
-<strong>© 2026 Srimani. All rights reserved.</strong><br/>
-<em>SmartLogger — Lightweight Logging for High-Performance .NET Applications</em>
-</p>
+<center><b>© 2026 Srimani. All rights reserved.</b></center>
+</br>
+<center><i>SmartLogger — Lightweight Logging for High-Performance .NET Applications</i></center>

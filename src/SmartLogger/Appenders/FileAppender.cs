@@ -1,4 +1,6 @@
-﻿using SmartLogger.Appenders.FileRolling;
+﻿using SmartLogger.Appenders.FileNaming;
+using SmartLogger.Appenders.FileRolling;
+using SmartLogger.Appenders.FileSystem;
 using SmartLogger.Core;
 using System;
 using System.IO;
@@ -25,21 +27,6 @@ namespace SmartLogger.Appenders;
 internal sealed class FileAppender : ILogAppender
 {
     /// <summary>
-    /// Responsible for constructing file names for active logs.
-    /// </summary>
-    private readonly FileNameBuilder _fileNameBuilder;
-
-    /// <summary>
-    /// Current active log file path used for writing.
-    /// </summary>
-    private string _activeFilePath;
-
-    /// <summary>
-    /// File-related configuration (base path, naming, extension).
-    /// </summary>
-    private readonly FileConfiguration _fileConfig;
-
-    /// <summary>
     /// Minimum log level required for a message to be written.
     /// </summary>
     private LogLevel _logLevel;
@@ -49,91 +36,36 @@ internal sealed class FileAppender : ILogAppender
     /// </summary>
     private ILogOutputFormatterStrategy _formatter;
 
-    /// <summary>
-    /// Optional rolling strategy controlling file rotation.
-    /// </summary>
-    private IRollingStrategy? _rollingStrategy;
+    private readonly FileLifecycleManager _fileLifecycleManager;
 
-    /// <summary>
-    /// Synchronization primitive to ensure thread-safe file operations.
-    /// </summary>
-    private readonly object _lockObject = new();
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="FileAppender"/> class.
-    /// </summary>
-    /// <param name="fileConfig">File configuration for naming and paths.</param>
-    /// <param name="logLevel">Minimum log level threshold.</param>
-    /// <param name="formatter">Formatter for message rendering.</param>
-    /// <param name="rollingStrategy">Optional rolling strategy.</param>
-    /// <exception cref="ArgumentNullException">Thrown when required arguments are null.</exception>
     internal FileAppender(
-        FileConfiguration fileConfig,
-        LogLevel logLevel,
-        ILogOutputFormatterStrategy formatter,
-        IRollingStrategy? rollingStrategy)
+    FileConfiguration configuration,
+    LogLevel logLevel,
+    ILogOutputFormatterStrategy formatter,
+    IRollingStrategy? rollingStrategy,
+    IFileNamingStrategy namingStrategy)
     {
-        _fileConfig = fileConfig ?? throw new ArgumentNullException(nameof(fileConfig));
-        _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
-
+        _formatter = formatter;
         _logLevel = logLevel;
-        _rollingStrategy = rollingStrategy;
 
-        _fileNameBuilder = new FileNameBuilder(_fileConfig);
-
-        // Resolve initial file path and ensure directory exists
-        _activeFilePath = ResolvePath(_fileNameBuilder.Build());
-        EnsureDirectoryExists();
+        _fileLifecycleManager =
+            new FileLifecycleManager(
+                configuration,
+                rollingStrategy,
+                namingStrategy);
     }
+
 
     /// <inheritdoc/>
     public void Append(LogMessage message)
     {
-        // Fast exit for null or below-threshold messages
-        if (message is null || !IsEnabled(message.LogLevel))
-            return;
+        if (message is null) return;
 
-        // Capture formatter reference to avoid race conditions
-        ILogOutputFormatterStrategy currentFormatter;
-        lock (_lockObject)
-        {
-            currentFormatter = _formatter;
-        }
+        if (!IsEnabled(message.LogLevel)) return;
 
-        // Perform formatting outside lock (CPU-bound)
-        var formattedMessage = currentFormatter.Format(message);
+        var formattedMessage = _formatter.Format(message);
 
-        // Lock only for file system operations
-        lock (_lockObject)
-        {
-            // Evaluate rolling before writing
-            if (_rollingStrategy != null && _rollingStrategy.ShouldRoll(_activeFilePath))
-            {
-                var newFile = _rollingStrategy.GetNextFilePath(_activeFilePath);
-
-                // Rename current file to rolled file
-                if (File.Exists(_activeFilePath))
-                {
-                    File.Move(_activeFilePath, newFile);
-                }
-
-                // Notify strategy about roll event
-                _rollingStrategy.OnRoll(newFile);
-
-                // Create a fresh active file path
-                _activeFilePath = ResolvePath(_fileNameBuilder.Build());
-            }
-
-            // Append log entry (shared read/write allows tailing tools)
-            using var stream = new FileStream(
-                _activeFilePath,
-                FileMode.Append,
-                FileAccess.Write,
-                FileShare.ReadWrite);
-
-            using var writer = new StreamWriter(stream);
-            writer.WriteLine(formattedMessage);
-        }
+        _fileLifecycleManager.Write(formattedMessage);
     }
 
     /// <inheritdoc/>
@@ -166,64 +98,9 @@ internal sealed class FileAppender : ILogAppender
         return _formatter;
     }
 
-    /// <summary>
-    /// Updates the appender configuration at runtime.
-    /// </summary>
-    /// <param name="logLevel">
-    /// New minimum log level
-    /// </param>
-    /// <param name="formatter">
-    /// New formatter strategy.
-    /// </param>
-    /// <param name="rollingStrategy">
-    /// New rolling strategy.
-    /// </param>
-    /// <remarks>
-    /// Updates mutable configuration while preserving the existing
-    /// appender instance and underlying file identity.
-    ///
-    /// Synchronization is performed using the existing lock to ensure
-    /// configuration changes are applied atomically with respect to
-    /// concurrent write operations.
-    /// </remarks>
-    internal void UpdateConfiguration(
-        LogLevel logLevel,
-        ILogOutputFormatterStrategy formatter,
-        IRollingStrategy? rollingStrategy)
+    internal void UpdateConfiguration(LogLevel logLevel, ILogOutputFormatterStrategy formatter)
     {
-        if (formatter == null)
-            throw new ArgumentNullException(nameof(formatter));
-
-        lock (_lockObject)
-        {
-            _logLevel = logLevel;
-            _formatter = formatter;
-            _rollingStrategy = rollingStrategy;
-        }
-    }
-
-    /// <summary>
-    /// Ensures the directory for the active log file exists.
-    /// </summary>
-    private void EnsureDirectoryExists()
-    {
-        var directory = Path.GetDirectoryName(_activeFilePath);
-
-        if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-    }
-
-    /// <summary>
-    /// Resolves a relative path to an absolute path using the application base directory.
-    /// </summary>
-    /// <param name="path">The input file path.</param>
-    /// <returns>An absolute file path.</returns>
-    private static string ResolvePath(string path)
-    {
-        return Path.IsPathRooted(path)
-            ? path
-            : Path.Combine(AppContext.BaseDirectory, path);
+        _logLevel = logLevel;
+        _formatter = formatter;
     }
 }

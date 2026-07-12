@@ -1,6 +1,27 @@
-# Sample Configurations
+# SmartLogger v1
+# Configuration Guide
 
-## 1. Minimal Setup (Default Behavior)
+---
+
+## Document Information
+
+| Project | Version | Date | Author | Status | Description |
+|---------|---------|------------|---------|-------------|-------------|
+| SmartLogger | 1.0.0 | 2026-07-12 | Srimani | Final | Demonstrates common SmartLogger configuration scenarios, recommended practices, and production-ready configuration examples. |
+
+---
+
+# Introduction
+
+SmartLogger is designed around **Convention over Configuration**.
+
+The default configuration is sufficient for most applications while still allowing advanced customization through a clean and extensible configuration model.
+
+This guide demonstrates the most common configuration scenarios used in development and production environments.
+
+---
+
+# 1. Minimal Setup (Default Behavior)
 
 ```json
 {
@@ -9,14 +30,23 @@
 }
 ```
 
-### What this does
+## Default Behavior
 
-* Uses default console appender
-* Uses simple layout
-* Plain text output
-* Synchronous logging
+When no appenders are configured, SmartLogger automatically enables a default Console Appender.
+
+The framework uses:
+
+- Console Appender
+- Plain Text Output
+- Simple Layout
+- Synchronous Logging
+- Root Log Level = INFO
+
+No additional configuration is required.
 
 ---
+
+# Console Logging
 
 ## 2. Console Logging (Simple Layout)
 
@@ -37,6 +67,13 @@
   ]
 }
 ```
+
+### What this does
+
+- Writes logs to the console.
+- Uses the Simple layout.
+- Outputs plain text.
+- Appender accepts DEBUG and above.
 
 ---
 
@@ -59,9 +96,20 @@
 }
 ```
 
+### What this does
+
+Produces additional diagnostic information such as
+
+- Thread Id
+- Correlation Id
+- Source
+- Timestamp
+
+Useful during development and troubleshooting.
+
 ---
 
-## 4. Custom Pattern
+## 4. Custom Pattern Layout
 
 ```json
 {
@@ -73,11 +121,21 @@
       "formatter": {
         "outputFormat": "PlainText",
         "layoutType": "Custom",
-        "pattern": "[%LEVEL] %MESSAGE (%THREAD)"
+        "pattern": "[%LEVEL] [%THREAD] [%CORRELATION] >> %MESSAGE"
       }
     }
   ]
 }
+```
+
+### What this does
+
+Allows complete control over the rendered log output.
+
+Example
+
+```
+[INFO] [12] [REQ-1023] >> Payment processed successfully
 ```
 
 ---
@@ -93,29 +151,56 @@
       "destination": {
         "type": "FileSystem",
         "file": {
-          "basePath": "logs/app",
+          "directory": "Logs",
+          "fileName": "Application",
           "extension": "log"
         }
       },
       "formatter": {
         "outputFormat": "PlainText",
         "layoutType": "Detailed"
-      },
-      "appenderLogLevel": "INFO"
+      }
     }
   ]
 }
 ```
 
-### What this does
+### Default Behavior
 
-* Writes logs to `logs/app.log`
-* Uses default naming (date + index)
-* Uses detailed layout
+Because SmartLogger follows **Convention over Configuration**, the remaining settings are automatically applied.
+
+```
+Rolling Strategy
+    Daily
+
+Naming Strategy
+    Date
+
+Archive
+    Enabled
+
+Compression
+    Enabled
+
+Retention
+    30 Days
+```
+
+Generated files
+
+```
+Logs
+
+Application.log
+
+Archive
+
+Application_2026-07-12.zip
+```
 
 ---
 
-## 6. File Naming Customization
+## 6. Custom File Naming
 
 ```json
 {
@@ -124,13 +209,12 @@
       "destination": {
         "type": "FileSystem",
         "file": {
-          "basePath": "logs/payment",
+          "directory": "Logs",
+          "fileName": "PaymentService",
           "extension": "log",
           "naming": {
-            "includeDate": true,
-            "dateFormat": "yyyy-MM-dd",
-            "includeIndex": true,
-            "separator": "_"
+            "strategy": "Date",
+            "dateFormat": "yyyy-MM-dd"
           }
         }
       }
@@ -139,16 +223,25 @@
 }
 ```
 
-### Output Example
+### Generated Files
 
 ```
-logs/payment_2026-01-01_1.log
-logs/payment_2026-01-01_2.log
+Logs
+
+PaymentService.log
+```
+
+After rolling
+
+```
+Archive
+
+PaymentService_2026-07-12.zip
 ```
 
 ---
 
-## 7. Static File (No Date / Index)
+## 7. Timestamp Naming Strategy
 
 ```json
 {
@@ -157,11 +250,11 @@ logs/payment_2026-01-01_2.log
       "destination": {
         "type": "FileSystem",
         "file": {
-          "basePath": "logs/static",
+          "directory": "Logs",
+          "fileName": "Orders",
           "extension": "log",
           "naming": {
-            "includeDate": false,
-            "includeIndex": false
+            "strategy": "Timestamp"
           }
         }
       }
@@ -170,52 +263,57 @@ logs/payment_2026-01-01_2.log
 }
 ```
 
-### Output
+### Notes
 
-```
-logs/static.log
-```
+Timestamp-based naming provides higher uniqueness and is useful for high-frequency rolling scenarios.
+
+---
+
+# File Naming Notes
+
+| Property | Description |
+|------------|-------------|
+| directory | Directory where the active log file is stored |
+| fileName | Logical name of the active log file |
+| extension | File extension without '.' |
+| naming.strategy | Determines how rolled files are named |
+| naming.dateFormat | Date format used by the Date naming strategy |
+
+---
+
+# Design Notes
+
+The File Naming Strategy is responsible only for determining **what a rolled log file should be called**.
+
+It does **not**
+
+- determine when rolling occurs
+- check whether files already exist
+- archive files
+- compress archives
+
+Those responsibilities belong to the **FileLifecycleManager**.
 
 ---
 
 # Rolling File Logging
 
-## 8. Size-Based Rolling
+SmartLogger supports two rolling strategies in v1.
 
-```json
-{
-  "appenders": [
-    {
-      "destination": {
-        "type": "FileSystem",
-        "file": {
-          "basePath": "logs/app"
-        }
-      },
-      "formatter": {
-        "outputFormat": "PlainText"
-      },
-      "file": {
-        "rollingPolicy": {
-          "rollingType": "Size",
-          "maxFileSizeMB": 10,
-          "maxRetainedFiles": 5
-        }
-      }
-    }
-  ]
-}
-```
+- **Daily Rolling** (Default)
+- **Size-Based Rolling**
 
-### What this does
+Rolling is evaluated lazily whenever a new log entry arrives.
 
-* Rolls file when size exceeds 10 MB
-* Keeps last 5 files
-* Prevents disk overflow
+No timers.
+
+No background services.
+
+No scheduler.
 
 ---
 
-## 9. Time-Based Rolling (Daily)
+# 8. Daily Rolling (Default)
 
 ```json
 {
@@ -224,10 +322,11 @@ logs/static.log
       "destination": {
         "type": "FileSystem",
         "file": {
-          "basePath": "logs/app",
-          "rollingPolicy": {
-            "rollingType": "Time",
-            "interval": "Day"
+          "directory": "Logs",
+          "fileName": "Application",
+          "extension": "log",
+          "rolling": {
+            "strategy": "Daily"
           }
         }
       }
@@ -238,12 +337,39 @@ logs/static.log
 
 ### What this does
 
-* Creates a new file every day
-* Segments logs by time window
+- Uses the same active log file throughout the day.
+- Creates a new archive when the date changes.
+- Automatically creates a fresh active log file.
+
+Example
+
+```
+Day 1
+
+Logs
+
+Application.log
+
+↓
+
+Roll
+
+↓
+
+Archive
+
+Application_2026-07-12.zip
+
+↓
+
+Logs
+
+Application.log
+```
 
 ---
 
-## 10. Hybrid Rolling (Coming Soon)
+# 9. Size-Based Rolling
 
 ```json
 {
@@ -252,12 +378,12 @@ logs/static.log
       "destination": {
         "type": "FileSystem",
         "file": {
-          "basePath": "logs/app",
-          "rollingPolicy": {
-            "rollingType": "Hybrid",
-            "interval": "Day",
-            "maxFileSizeMB": 50,
-            "maxRetainedFiles": 7
+          "directory": "Logs",
+          "fileName": "Application",
+          "extension": "log",
+          "rolling": {
+            "strategy": "Size",
+            "maxFileSizeMB": 10
           }
         }
       }
@@ -266,11 +392,381 @@ logs/static.log
 }
 ```
 
+### What this does
+
+- Rolls whenever the active log exceeds **10 MB**.
+- Automatically archives the previous file.
+- Starts writing into a fresh active log file.
+
+Useful for
+
+- High-throughput applications
+- APIs
+- Long-running Windows Services
+- Background Workers
+
 ---
 
-# JSON Logging
+# Rolling Strategy Notes
 
-## 11. Default JSON Output
+| Property | Description |
+|------------|-------------|
+| strategy | Rolling strategy (Daily or Size) |
+| maxFileSizeMB | Maximum active log file size before rolling (Size strategy only) |
+
+---
+
+# Rolling Design
+
+A rolling strategy has only one responsibility.
+
+```
+Should the current active file be rolled?
+```
+
+It never
+
+- generates file names
+- archives files
+- compresses files
+- deletes archives
+
+It simply returns
+
+```
+true
+
+or
+
+false
+```
+
+---
+
+# Archive Configuration
+
+By default, SmartLogger archives every rolled log file.
+
+## 10. Default Archive
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "archive": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Default archive directory
+
+```
+Logs
+
+Archive
+```
+
+Generated structure
+
+```
+Logs
+
+Application.log
+
+Archive
+
+Application_2026-07-12.zip
+```
+
+---
+
+## 11. Custom Archive Directory
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "archive": {
+            "enabled": true,
+            "directory": "ArchivedLogs",
+            "compress": true
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Generated structure
+
+```
+Logs
+
+Application.log
+
+ArchivedLogs
+
+Application_2026-07-12.zip
+```
+
+---
+
+# Archive Configuration Notes
+
+| Property | Description |
+|------------|-------------|
+| enabled | Enables archive support |
+| directory | Archive folder location |
+| compress | Compress archived files into ZIP format |
+
+---
+
+# Compression
+
+Compression is enabled by default.
+
+Immediately after a rolling event
+
+```
+Application.log
+
+↓
+
+Application_2026-07-12.log
+
+↓
+
+Application_2026-07-12.zip
+
+↓
+
+Delete Application_2026-07-12.log
+```
+
+This keeps the archive directory small and efficient.
+
+---
+
+## 12. Disable Compression
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "archive": {
+            "enabled": true,
+            "compress": false
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Generated structure
+
+```
+Archive
+
+Application_2026-07-12.log
+```
+
+instead of
+
+```
+Application_2026-07-12.zip
+```
+
+---
+
+# Retention Policy
+
+SmartLogger automatically removes expired archived log files.
+
+Retention executes only during rolling.
+
+No timers.
+
+No background cleanup service.
+
+---
+
+## 13. Default Retention
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "retention": {
+            "retentionDays": 30
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+### What this does
+
+During every rolling event
+
+```
+Roll
+
+↓
+
+Archive
+
+↓
+
+Compress
+
+↓
+
+Delete ZIP files older than 30 days
+```
+
+---
+
+## 14. Custom Retention
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "FileSystem",
+        "file": {
+          "directory": "Logs",
+          "fileName": "Application",
+          "retention": {
+            "retentionDays": 90
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+Useful for
+
+- Audit systems
+- Banking applications
+- Compliance requirements
+- Long-term diagnostics
+
+---
+
+# File Lifecycle
+
+Every log write follows the same predictable lifecycle.
+
+```
+Write Log
+
+↓
+
+Ensure Active File
+
+↓
+
+Need Roll?
+
+↓
+
+No
+    Write Message
+
+↓
+
+Yes
+
+Archive Active File
+
+↓
+
+Compress Archive
+
+↓
+
+Cleanup Old Archives
+
+↓
+
+Create Fresh Active File
+
+↓
+
+Write Message
+```
+
+The entire lifecycle is protected by a single synchronization lock, ensuring thread-safe and ordered log writes.
+
+---
+
+# File Lifecycle Design Notes
+
+SmartLogger follows a **Hybrid (Lazy Rolling + Locking)** approach.
+
+Rolling is evaluated only when a new log entry arrives.
+
+Benefits
+
+- No scheduler
+- No timer
+- No polling
+- Minimal synchronization
+- Thread-safe rolling
+- Ordered log writes
+
+This design keeps the implementation lightweight while remaining predictable under concurrent workloads.
+
+---
+
+# Structured Logging
+
+SmartLogger supports structured logging through JSON output.
+
+JSON logging is recommended for production systems where logs are consumed by tools such as
+
+- ELK Stack
+- OpenSearch
+- Splunk
+- Azure Monitor
+- Grafana Loki
+
+---
+
+# 15. Default JSON Logging
 
 ```json
 {
@@ -287,9 +783,22 @@ logs/static.log
 }
 ```
 
+### Example Output
+
+```json
+{
+  "timestamp": "2026-07-12T10:15:43.127Z",
+  "level": "INFO",
+  "thread": 8,
+  "correlation": "REQ-1024",
+  "source": "OrderService",
+  "message": "Order processed successfully."
+}
+```
+
 ---
 
-## 12. JSON with Selected Fields
+# 16. JSON with Selected Fields
 
 ```json
 {
@@ -300,16 +809,32 @@ logs/static.log
       },
       "formatter": {
         "outputFormat": "Json",
-        "includedJsonFields": ["timestamp", "level", "message"]
+        "includedJsonFields": [
+          "timestamp",
+          "level",
+          "message"
+        ]
       }
     }
   ]
 }
 ```
 
+### Example Output
+
+```json
+{
+  "timestamp": "2026-07-12T10:15:43.127Z",
+  "level": "INFO",
+  "message": "Order processed successfully."
+}
+```
+
+Useful when reducing payload size or integrating with systems that require only essential fields.
+
 ---
 
-## 13. JSON with Custom Field Names
+# 17. JSON with Custom Field Names
 
 ```json
 {
@@ -320,8 +845,12 @@ logs/static.log
       },
       "formatter": {
         "outputFormat": "Json",
-        "includedJsonFields": ["timestamp", "level", "message"],
-        "jsonFieldMappings": {
+        "includedJsonFields": [
+          "timestamp",
+          "level",
+          "message"
+        ],
+        "jsonFieldMappings": [
           {
             "sourceField": "timestamp",
             "targetField": "@timestamp"
@@ -334,99 +863,51 @@ logs/static.log
             "sourceField": "message",
             "targetField": "msg"
           }
-        }
+        ]
       }
     }
   ]
 }
 ```
 
----
-
-# Filtering (TODO)
-
-## 14. Filter by Log Level
+### Example Output
 
 ```json
 {
-  "appenders": [
-    {
-      "destination": {
-        "type": "Console"
-      },
-      "filter": {
-        "minLevel": "INFO",
-        "maxLevel": "ERROR"
-      }
-    }
-  ]
+  "@timestamp": "2026-07-12T10:15:43.127Z",
+  "severity": "INFO",
+  "msg": "Order processed successfully."
 }
 ```
+
+Useful when integrating with external observability platforms.
 
 ---
 
-## 15. Keyword Filtering
+# JSON Configuration Notes
 
-```json
-{
-  "appenders": [
-    {
-      "destination": {
-        "type": "Console"
-      },
-      "filter": {
-        "includeKeywords": ["Payment"],
-        "excludeKeywords": ["HealthCheck"]
-      }
-    }
-  ]
-}
-```
-
----
-
-# Multi-Appender Setup
-
-## 16. Console + File (Production)
-
-```json
-{
-  "rootLogLevel": "DEBUG",
-  "appenders": [
-    {
-      "destination": {
-        "type": "Console"
-      },
-      "formatter": {
-        "outputFormat": "PlainText"
-      }
-    },
-    {
-      "destination": {
-        "type": "FileSystem",
-        "file": {
-          "basePath": "logs/app",
-          "extension": "json"
-        }
-      },
-      "formatter": {
-        "outputFormat": "Json"
-      }
-    }
-  ]
-}
-```
+| Property | Description |
+|------------|-------------|
+| outputFormat | PlainText, Json or Xml |
+| includedJsonFields | Controls which fields appear in the JSON output |
+| jsonFieldMappings | Renames JSON property names |
+| layoutType | Ignored for JSON output |
 
 ---
 
 # Logger Overrides
 
-## 17. Per-Component Control
+Logger overrides allow specific loggers to use different log levels without affecting the global root log level.
+
+---
+
+# 18. Logger Overrides
 
 ```json
 {
   "rootLogLevel": "INFO",
-  "loggerOverrides": {
+
+  "loggerOverrides": [
     {
       "loggerName": "SmartLogger.PaymentService",
       "logLevel": "DEBUG"
@@ -435,26 +916,75 @@ logs/static.log
       "loggerName": "SmartLogger.Database",
       "logLevel": "ERROR"
     }
-  }
+  ]
 }
 ```
-# Async Logging (Performance Optimization)
 
-## 18. Enable Async Logging
+### Effective Log Levels
+
+| Logger | Effective Level |
+|---------|-----------------|
+| Root | INFO |
+| SmartLogger.PaymentService | DEBUG |
+| SmartLogger.Database | ERROR |
+
+Logger overrides are evaluated before the Root Log Level.
+
+---
+
+# Multi-Appender Configuration
+
+A single logger may write to multiple destinations simultaneously.
+
+Each appender maintains its own
+
+- Destination
+- Formatter
+- Log Level
+
+---
+
+# 19. Console + File
 
 ```json
 {
-  "rootLogLevel": "INFO",
-  "enableAsyncLoggingProcess": true,
+  "rootLogLevel": "DEBUG",
+
   "appenders": [
+
+    {
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Simple"
+      }
+    },
+
     {
       "destination": {
         "type": "FileSystem",
+
         "file": {
-          "basePath": "logs/app",
-          "extension": "jsonl"
+
+          "directory": "Logs",
+
+          "fileName": "Application",
+
+          "extension": "log",
+
+          "rolling": {
+            "strategy": "Daily"
+          },
+
+          "archive": {
+            "enabled": true,
+            "compress": true
+          }
         }
       },
+
       "formatter": {
         "outputFormat": "Json"
       }
@@ -465,100 +995,547 @@ logs/static.log
 
 ### What this does
 
-* Moves logging I/O to a background worker thread
-* Reduces latency on the main application thread
-* Uses an internal queue to buffer log events
+Console
+
+- Plain Text
+- Simple Layout
+
+File
+
+- JSON Output
+- Daily Rolling
+- ZIP Compression
+- 30 Day Retention
 
 ---
 
-### When to use
+# Async Logging
 
-* High-throughput systems (APIs, batch jobs, streaming)
-* File or remote logging (I/O heavy operations)
-* Production workloads
+By default SmartLogger performs synchronous logging.
 
----
-
-### When NOT to use
-
-* Debugging critical issues (you want immediate visibility)
-* Systems where **strict log ordering / durability** is required
+Async logging can be enabled when maximum throughput is required.
 
 ---
 
-### Design Note
+# 20. Enable Async Logging
 
-> SmartLogger is **synchronous by default** for correctness.
-> Async mode is an **opt-in optimization**, not the default behavior.
+```json
+{
+  "rootLogLevel": "INFO",
+
+  "enableAsyncLoggingProcess": true,
+
+  "appenders": [
+
+    {
+      "destination": {
+        "type": "FileSystem",
+
+        "file": {
+
+          "directory": "Logs",
+
+          "fileName": "Application",
+
+          "extension": "json"
+        }
+      },
+
+      "formatter": {
+        "outputFormat": "Json"
+      }
+    }
+  ]
+}
+```
+
+### What this does
+
+- Moves log processing to a background worker.
+- Improves application responsiveness.
+- Suitable for high-throughput applications.
 
 ---
 
-# Supported Tokens (PlainText Layout)
+# When to use Async Logging
+
+Recommended for
+
+- ASP.NET Core APIs
+- Worker Services
+- Windows Services
+- Batch Processing
+- High-volume Applications
+
+---
+
+# When NOT to use Async Logging
+
+Avoid Async Logging when
+
+- Immediate log durability is required.
+- Debugging startup failures.
+- Diagnosing application crashes.
+
+---
+
+# Design Note
+
+SmartLogger is intentionally **synchronous by default**.
+
+Async logging is an **opt-in performance optimization**, ensuring correctness remains the default behavior.
+
+---
+
+# Supported Plain Text Tokens
+
+When using the **Custom** layout, SmartLogger supports the following built-in tokens.
+
+| Token | Description |
+|---------|-------------|
+| `%TIMESTAMP` | Timestamp of the log event |
+| `%LEVEL` | Log level (DEBUG, INFO, etc.) |
+| `%MESSAGE` | Log message |
+| `%SOURCE` | Logger source (class or logger name) |
+| `%THREAD` | Managed thread identifier |
+| `%CORRELATION` | Current correlation identifier |
+
+---
+
+# Sample Custom Pattern
+
+```json
+{
+  "appenders": [
+    {
+      "destination": {
+        "type": "Console"
+      },
+      "formatter": {
+        "outputFormat": "PlainText",
+        "layoutType": "Custom",
+        "pattern": "[%TIMESTAMP] [%LEVEL] [%THREAD] [%CORRELATION] %MESSAGE"
+      }
+    }
+  ]
+}
+```
+
+Example Output
 
 ```
-%TIMESTAMP
-%LEVEL
-%MESSAGE
-%SOURCE
-%THREAD
-%CORRELATION
+[2026-07-12 10:35:42.815]
+[INFO]
+[12]
+[REQ-1001]
+Payment completed successfully.
 ```
 
 ---
 
-# JSON Configuration Notes
+# Root Configuration Reference
 
-* `includedJsonFields` → controls which fields are included
-* `jsonFieldMappings` → renames fields
-* Default fields provide balanced observability
-
----
-
-# Destination Notes
-
-* `type` → Console | FileSystem | DatabaseSystem
-* `file` → required only for FileSystem
+| Property | Description | Default |
+|------------|-------------|----------|
+| rootLogLevel | Default log level | INFO |
+| loggerOverrides | Logger-specific log levels | Empty |
+| appenders | Configured appenders | Empty (Console added automatically) |
+| enableAsyncLoggingProcess | Enables async logging | false |
 
 ---
 
-# File Configuration Notes
+# Appender Configuration Reference
 
-* `basePath` → logical file identity
-* `extension` → output type (log, json, txt)
-* `naming` → controls file naming behavior
-
----
-
-# Rolling Policy Notes
-
-* `rollingType` → Size | Time | Hybrid
-* `maxFileSizeMB` → size-based rotation
-* `interval` → Hour | Day | Month
-* `maxRetainedFiles` → disk safety
+| Property | Description |
+|------------|-------------|
+| destination | Where logs are written |
+| formatter | Controls output formatting |
+| filter | Reserved for future versions |
+| appenderLogLevel | Overrides RootLogLevel for this appender |
 
 ---
 
-# Filter Notes
+# Destination Configuration Reference
 
-* `minLevel` / `maxLevel` → level-based filtering
-* `includeKeywords` → allow only matching logs
-* `excludeKeywords` → drop unwanted logs
-
----
-
-# Thanks for reading upto the end. Below is the pro tip for you! 
-
-* Use **PlainText + Detailed layout** during development
-* Use **JSON output** for observability platforms (ELK, Splunk)
-* Use **filters** to reduce noise without code changes
-* Combine **file naming + rolling** for production hygiene
-* Enable **async logging** for high-throughput systems
+| Property | Description |
+|------------|-------------|
+| type | Console, FileSystem or DatabaseSystem |
+| file | File configuration (required for FileSystem) |
+| database | Reserved for future versions |
 
 ---
 
-# If I want to sum up smart logger in one line... it would be defined as follows :) 
+# Formatter Configuration Reference
 
-> SmartLogger is designed to give you **control without complexity**
-> Start simple → scale to production → no redesign needed
+| Property | Description | Default |
+|------------|-------------|----------|
+| outputFormat | PlainText, Json or Xml | PlainText |
+| layoutType | Simple, Detailed or Custom | Simple |
+| pattern | Custom layout pattern | Empty |
+| includedJsonFields | Fields included in JSON output | Default fields |
+| jsonFieldMappings | Renames JSON fields | Empty |
 
 ---
+
+# File Configuration Reference
+
+| Property | Description | Default |
+|------------|-------------|----------|
+| directory | Active log directory | Logs |
+| fileName | Active log file name | Application |
+| extension | File extension | log |
+| naming | File naming configuration | Date Strategy |
+| rolling | Rolling configuration | Daily |
+| archive | Archive configuration | Enabled |
+| retention | Retention configuration | 30 Days |
+
+---
+
+# File Naming Configuration
+
+| Property | Description | Default |
+|------------|-------------|----------|
+| strategy | File naming strategy | Date |
+| dateFormat | Date format used for rolled files | yyyy-MM-dd |
+
+---
+
+# Rolling Configuration
+
+| Property | Description | Default |
+|------------|-------------|----------|
+| strategy | Daily or Size | Daily |
+| maxFileSizeMB | Maximum size before rolling | 10 |
+
+---
+
+# Archive Configuration
+
+| Property | Description | Default |
+|------------|-------------|----------|
+| enabled | Enables archive support | true |
+| directory | Archive directory | Archive |
+| compress | Compress rolled logs | true |
+
+---
+
+# Retention Configuration
+
+| Property | Description | Default |
+|------------|-------------|----------|
+| retentionDays | Number of days to retain archived logs | 30 |
+
+---
+
+# Logger Override Notes
+
+Logger overrides always take precedence over the Root Log Level.
+
+Example
+
+```
+Root
+
+INFO
+
+↓
+
+PaymentService
+
+DEBUG
+
+↓
+
+Database
+
+ERROR
+```
+
+This allows individual components to emit more or less information without affecting the rest of the application.
+
+---
+
+# Logging Pipeline
+
+Every log request passes through the following pipeline.
+
+```
+Application
+
+↓
+
+Logger
+
+↓
+
+Log Level Resolution
+
+↓
+
+Appender Selection
+
+↓
+
+Formatter
+
+↓
+
+FileLifecycleManager
+
+↓
+
+Ensure Active File
+
+↓
+
+Need Roll?
+
+↓
+
+Archive
+
+↓
+
+Compress
+
+↓
+
+Retention Cleanup
+
+↓
+
+Write Log
+```
+
+This pipeline remains identical regardless of whether logging is synchronous or asynchronous.
+
+---
+
+# Best Practices
+
+## Development
+
+Recommended
+
+- Console Appender
+- Plain Text
+- Detailed Layout
+- DEBUG Log Level
+
+Example
+
+```json
+{
+  "rootLogLevel": "DEBUG"
+}
+```
+
+---
+
+## Production
+
+Recommended
+
+- File Appender
+- JSON Output
+- Daily Rolling
+- ZIP Compression
+- 30 Day Retention
+- INFO Log Level
+
+This provides an excellent balance between observability and storage efficiency.
+
+---
+
+## High Throughput Applications
+
+Recommended
+
+- Async Logging
+- JSON Output
+- Size-Based Rolling
+
+Ideal for
+
+- ASP.NET Core APIs
+- Worker Services
+- Event Processors
+- Streaming Applications
+
+---
+
+## Long Running Services
+
+Recommended
+
+- Daily Rolling
+- Archive Enabled
+- Compression Enabled
+- 90 Day Retention (if required)
+
+Suitable for
+
+- Windows Services
+- Background Services
+- Scheduled Jobs
+
+---
+
+# Production Recommendations
+
+✔ Prefer JSON output for machine-readable logs.
+
+✔ Keep PlainText for local debugging.
+
+✔ Use Daily rolling unless log volume is exceptionally high.
+
+✔ Enable compression for production deployments.
+
+✔ Increase retention only when required by compliance or audit policies.
+
+✔ Prefer logger overrides over globally increasing the Root Log Level.
+
+✔ Use correlation identifiers for distributed request tracing.
+
+---
+
+# Common Mistakes
+
+❌ Using `.log` instead of `log` for the extension.
+
+Correct
+
+```json
+"extension": "log"
+```
+
+Incorrect
+
+```json
+"extension": ".log"
+```
+
+---
+
+❌ Disabling archive while expecting historical logs.
+
+If archive is disabled, rolled log files are not preserved.
+
+---
+
+❌ Setting an extremely small `maxFileSizeMB`.
+
+Very small sizes may cause excessive rolling and unnecessary disk activity.
+
+---
+
+❌ Setting the Root Log Level to DEBUG in production.
+
+Use logger overrides instead for components that require detailed diagnostics.
+
+---
+
+# Frequently Asked Questions
+
+## Does SmartLogger use background timers for rolling?
+
+No.
+
+Rolling is evaluated lazily whenever a new log message arrives.
+
+---
+
+## Does SmartLogger create multiple active log files?
+
+No.
+
+There is always a single active log file.
+
+Older files are archived after rolling.
+
+---
+
+## When does retention cleanup execute?
+
+Immediately after a successful rolling operation.
+
+No scheduler or timer is used.
+
+---
+
+## Can I add my own rolling strategy?
+
+Yes.
+
+Implement
+
+```
+IRollingStrategy
+```
+
+and register it within the framework.
+
+---
+
+## Can I implement my own naming strategy?
+
+Yes.
+
+Implement
+
+```
+IFileNamingStrategy
+```
+
+to generate custom rolled file names.
+
+---
+
+## Does SmartLogger support multiple appenders?
+
+Yes.
+
+Each appender
+
+- maintains its own formatter
+- has its own log level
+- operates independently
+
+---
+
+# Configuration Philosophy
+
+SmartLogger follows a few simple principles.
+
+- Convention over Configuration
+- Sensible Defaults
+- Predictable Behavior
+- Fail Fast
+- Open for Extension
+- Keep It Simple
+
+The framework aims to reduce configuration complexity while remaining flexible enough for production environments.
+
+---
+
+# Final Thoughts
+
+SmartLogger is designed to help developers focus on their applications rather than logging infrastructure.
+
+Whether you're building a small console application or a production-grade distributed service, the same configuration model scales naturally without requiring architectural changes.
+
+Start with the defaults.
+
+Customize only when necessary.
+
+---
+
+# If I had to summarize SmartLogger in one sentence...
+
+> **SmartLogger provides production-ready logging with sensible defaults, clean architecture, and extensibility—without the complexity commonly found in traditional logging frameworks.**
+
+---
+
+<p align="center">
+<strong>© 2026 Srimani. All rights reserved.</strong>
+</p>

@@ -303,7 +303,7 @@ namespace SmartLogger.Tests.Configuration
             configuration.Appenders[0].Destination = new DestinationConfiguration
             {
                 Type = LogOutputDestination.FileSystem,
-                File = new FileConfiguration { BasePath = "logs/app", Extension = "log" }
+                File = new FileConfiguration { FileName = "logs/app", Extension = "log" }
             };
             var provider = new InMemoryConfigurationProvider(configuration);
 
@@ -311,7 +311,7 @@ namespace SmartLogger.Tests.Configuration
             var loaded = provider.Load();
 
             // Assert
-            Assert.That(loaded.Appenders[0].Destination.File.BasePath, Is.EqualTo("logs/app"));
+            Assert.That(loaded.Appenders[0].Destination.File.FileName, Is.EqualTo("logs/app"));
         }
 
         [Test]

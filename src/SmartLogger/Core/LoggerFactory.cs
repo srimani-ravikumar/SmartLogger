@@ -1,4 +1,5 @@
 ﻿using SmartLogger.Appenders;
+using SmartLogger.Appenders.FileNaming;
 using SmartLogger.Appenders.FileRolling;
 using SmartLogger.Formatters;
 using System;
@@ -183,7 +184,8 @@ internal class LoggerFactory
                         config,
                         appenderLogLevel,
                         FormatterFactory.Create(config),
-                        RollingFactory.Create(config.Destination.File),
+                        RollingStrategyFactory.Create(config.Destination.File),
+                        FileNamingStrategyFactory.Create(config.Destination.File),
                         globalConfig.EnableAsyncLoggingProcess);
                 }
 

@@ -2,6 +2,8 @@
 
 namespace SmartLogger.Core;
 
+#region Top-level Configuration Holder
+
 /// <summary>
 /// Represents the root logging configuration.
 /// This is the main entry point for configuring logging behavior.
@@ -56,6 +58,10 @@ public sealed class LogConfigurationHolder
     public bool EnableAsyncLoggingProcess { get; set; } = false;
 }
 
+#endregion
+
+#region Logger Override Configuration
+
 
 /// <summary>
 /// Represents a logger-specific log level override.
@@ -78,6 +84,10 @@ public sealed class LoggerOverrideConfiguration
     /// </summary>
     public LogLevel LogLevel { get; set; } = LogLevel.INFO;
 }
+
+#endregion
+
+#region Appender Configuration
 
 /// <summary>
 /// Represents a single log appender.
@@ -117,6 +127,10 @@ public sealed class AppenderConfiguration
     public LogLevel? AppenderLogLevel { get; set; }
 }
 
+#endregion
+
+#region Destination Configuration
+
 /// <summary>
 /// Defines where log messages are written.
 /// </summary>
@@ -140,8 +154,231 @@ public sealed class DestinationConfiguration
     /// <summary>
     /// Database-specific configuration (future extension).
     /// </summary>
-    public object? Database { get; set; } // TODO: Strong type later
+    //public object? Database { get; set; } // TODO: Strong type later
 }
+
+#endregion
+
+#region File Configuration
+
+/// <summary>
+/// Represents the complete configuration for file-based logging.
+/// </summary>
+/// <remarks>
+/// Encapsulates all settings required for writing logs to the file system,
+/// including file naming, rolling policy, archival, and retention.
+/// </remarks>
+public sealed class FileConfiguration
+{
+    /// <summary>
+    /// Gets or sets the directory where active log files are stored.
+    /// </summary>
+    /// <remarks>
+    /// Default: <c>Logs</c>
+    /// </remarks>
+    public string Directory { get; set; } = "Logs";
+
+    /// <summary>
+    /// Gets or sets the base name of the log file.
+    /// </summary>
+    /// <remarks>
+    /// The configured naming strategy determines how the final file name
+    /// is generated from this base name.
+    /// </remarks>
+    /// <example>
+    /// <c>Application</c> → <c>Application-2026-07-12.log</c>
+    /// </example>
+    public string FileName { get; set; } = "Application";
+
+    /// <summary>
+    /// Gets or sets the file extension.
+    /// </summary>
+    /// <remarks>
+    /// Do not include the leading dot.
+    /// </remarks>
+    /// <example>
+    /// <c>log</c>, <c>txt</c>, <c>json</c>
+    /// </example>
+    public string Extension { get; set; } = "log";
+
+    /// <summary>
+    /// Gets or sets the file naming configuration.
+    /// </summary>
+    public FileNamingConfiguration Naming { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the file rolling configuration.
+    /// </summary>
+    public FileRollingConfiguration Rolling { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets archive-related configuration.
+    /// </summary>
+    public ArchiveConfiguration Archive { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets log retention configuration.
+    /// </summary>
+    public RetentionConfiguration Retention { get; set; } = new();
+}
+
+/// <summary>
+/// Defines how log file names are generated.
+/// </summary>
+/// <remarks>
+/// Responsible only for constructing file names.
+/// It does not determine when files should roll.
+/// </remarks>
+public sealed class FileNamingConfiguration
+{
+    /// <summary>
+    /// Gets or sets the file naming strategy.
+    /// </summary>
+    /// <value>
+    /// Default: <see cref="FileNamingStrategyType.Date"/>
+    /// </value>
+    public FileNamingStrategyType Strategy { get; set; } = FileNamingStrategyType.Date;
+
+    /// <summary>
+    /// Gets or sets the date format used by date-based naming strategies.
+    /// </summary>
+    /// <remarks>
+    /// Uses standard .NET date format strings.
+    /// </remarks>
+    /// <example>
+    /// <c>yyyy-MM-dd</c>
+    /// </example>
+    public string DateFormat { get; set; } = "yyyy-MM-dd";
+}
+
+/// <summary>
+/// Defines when log files should be rolled.
+/// </summary>
+/// <remarks>
+/// Determines the conditions under which the current log file
+/// is replaced with a new one.
+/// </remarks>
+public sealed class FileRollingConfiguration
+{
+    /// <summary>
+    /// Gets or sets the rolling strategy.
+    /// </summary>
+    /// <value>
+    /// Default: <see cref="RollingStrategyType.Daily"/>
+    /// </value>
+    public RollingStrategyType Strategy { get; set; } = RollingStrategyType.Daily;
+
+    /// <summary>
+    /// Gets or sets the maximum file size in megabytes before rolling occurs.
+    /// </summary>
+    /// <remarks>
+    /// Applicable only when using
+    /// <see cref="RollingStrategyType.Size"/>.
+    /// </remarks>
+    public long MaxFileSizeMB { get; set; } = 10;
+}
+
+/// <summary>
+/// Defines how rolled log files are archived.
+/// </summary>
+/// <remarks>
+/// Archive processing occurs immediately after a log file is rolled.
+/// </remarks>
+public sealed class ArchiveConfiguration
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether archival is enabled.
+    /// </summary>
+    /// <value>
+    /// Default: <c>true</c>
+    /// </value>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the archive directory.
+    /// </summary>
+    /// <remarks>
+    /// This directory is created automatically if it does not exist.
+    /// </remarks>
+    /// <value>
+    /// Default: <c>Archive</c>
+    /// </value>
+    public string Directory { get; set; } = "Archive";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether archived files
+    /// should be compressed.
+    /// </summary>
+    /// <value>
+    /// Default: <c>true</c>
+    /// </value>
+    public bool Compress { get; set; } = true;
+}
+
+/// <summary>
+/// Defines how long archived log files are retained.
+/// </summary>
+/// <remarks>
+/// Retention cleanup is evaluated during the rolling process.
+/// </remarks>
+public sealed class RetentionConfiguration
+{
+    /// <summary>
+    /// Gets or sets the number of days archived log files are retained.
+    /// </summary>
+    /// <remarks>
+    /// Archived files older than the configured number of days
+    /// are automatically deleted.
+    /// </remarks>
+    /// <value>
+    /// Default: <c>30</c>
+    /// </value>
+    public int RetentionDays { get; set; } = 30;
+}
+
+/// <summary>
+/// Defines the supported strategies used to generate log file names.
+/// </summary>
+public enum FileNamingStrategyType
+{
+    /// <summary>
+    /// Generates file names using the current date.
+    /// </summary>
+    Date,
+
+    /// <summary>
+    /// Generates file names using the current timestamp.
+    /// </summary>
+    Timestamp,
+
+    /// <summary>
+    /// Uses a custom file naming strategy supplied by the application.
+    /// </summary>
+    Custom
+}
+
+/// <summary>
+/// Defines the supported strategies used to determine
+/// when log files are rolled.
+/// </summary>
+public enum RollingStrategyType
+{
+    /// <summary>
+    /// Rolls the log file once per day.
+    /// </summary>
+    Daily,
+
+    /// <summary>
+    /// Rolls the log file when its size exceeds
+    /// the configured threshold.
+    /// </summary>
+    Size
+}
+
+#endregion
+
+#region Formatter Configuration
+
 
 /// <summary>
 /// Defines how log messages are formatted before being written.
@@ -212,134 +449,6 @@ public sealed class JsonFieldMappingConfiguration
     public string TargetField { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Represents configuration for file-based logging.
-/// </summary>
-/// <remarks>
-/// Encapsulates all settings required for:
-/// <list type="bullet">
-/// <item><description>File path and extension</description></item>
-/// <item><description>File naming strategy</description></item>
-/// <item><description>Rolling policy (size/time-based rotation)</description></item>
-/// </list>
-/// </remarks>
-public sealed class FileConfiguration
-{
-    /// <summary>
-    /// Base file path without extension or suffix.
-    /// </summary>
-    /// <remarks>
-    /// Example: <c>logs/app</c> → final file may become <c>logs/app-2026-05-02.log</c>
-    /// </remarks>
-    public string BasePath { get; set; } = "logs/app";
-
-    /// <summary>
-    /// File extension (without leading dot).
-    /// </summary>
-    /// <remarks>
-    /// Example: <c>log</c>, <c>txt</c>, <c>json</c>
-    /// </remarks>
-    public string Extension { get; set; } = "log";
-
-    /// <summary>
-    /// Controls how file names are constructed.
-    /// </summary>
-    public FileNamingConfiguration Naming { get; set; } = new();
-
-    /// <summary>
-    /// Defines rolling policy for file rotation.
-    /// </summary>
-    public RollingPolicyConfiguration RollingPolicy { get; set; } = new();
-}
-
-/// <summary>
-/// Defines how log file names are constructed.
-/// </summary>
-/// <remarks>
-/// Combines base name with optional components such as date and index.
-/// </remarks>
-public sealed class FileNamingConfiguration
-{
-    /// <summary>
-    /// Indicates whether the current date should be included in the file name.
-    /// </summary>
-    public bool IncludeDate { get; set; } = true;
-
-    /// <summary>
-    /// Date format used when <see cref="IncludeDate"/> is enabled.
-    /// </summary>
-    /// <remarks>
-    /// Uses standard .NET date format strings (e.g., <c>yyyy-MM-dd</c>).
-    /// </remarks>
-    public string DateFormat { get; set; } = "yyyy-MM-dd";
-
-    /// <summary>
-    /// Indicates whether a rolling index should be included.
-    /// </summary>
-    /// <remarks>
-    /// Used to differentiate multiple files within the same time window.
-    /// </remarks>
-    public bool IncludeIndex { get; set; } = true;
-
-    /// <summary>
-    /// Separator used between file name components.
-    /// </summary>
-    /// <remarks>
-    /// Example: <c>-</c>, <c>_</c>
-    /// </remarks>
-    public string Separator { get; set; } = "-";
-}
-
-
-/// <summary>
-/// Defines rules for log file rotation.
-/// </summary>
-/// <remarks>
-/// Supports multiple rolling strategies:
-/// <list type="bullet">
-/// <item><description>Size-based rolling</description></item>
-/// <item><description>Time-based rolling</description></item>
-/// </list>
-/// </remarks>
-public sealed class RollingPolicyConfiguration
-{
-    /// <summary>
-    /// Type of rolling strategy to apply.
-    /// </summary>
-    public RollingType RollingType { get; set; } = RollingType.None;
-
-    /// <summary>
-    /// Maximum file size in megabytes before triggering a roll.
-    /// </summary>
-    /// <remarks>
-    /// Applicable only for size-based rolling.
-    /// </remarks>
-    public long MaxFileSizeMB { get; set; } = 10;
-
-    /// <summary>
-    /// Time interval used for rolling.
-    /// </summary>
-    /// <remarks>
-    /// Applicable only for time-based rolling.
-    /// </remarks>
-    public RollingInterval Interval { get; set; } = RollingInterval.None;
-
-    /// <summary>
-    /// Maximum number of rolled files to retain.
-    /// </summary>
-    /// <remarks>
-    /// Older files may be deleted when this limit is exceeded.
-    /// </remarks>
-    public int MaxRetainedFiles { get; set; } = 7;
-
-    /// <summary>
-    /// Date format used for time-based rolling.
-    /// </summary>
-    /// <remarks>
-    /// Should align with <see cref="FileNamingConfiguration.DateFormat"/> when both are used.
-    /// </remarks>
-    public string DateFormat { get; set; } = "yyyy-MM-dd";
-}
 
 /// <summary>
 /// Defines the supported log output destinations.
@@ -410,60 +519,4 @@ public enum LogMessageLayoutType
     Custom
 }
 
-/// <summary>
-/// Represents the strategy used for log file rolling.
-/// </summary>
-/// <remarks>
-/// Determines how and when log files are rotated.
-/// </remarks>
-public enum RollingType
-{
-    /// <summary>
-    /// No rolling is applied. Logs continue writing to a single file.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Rolling occurs when the file size exceeds a configured threshold.
-    /// </summary>
-    Size,
-
-    /// <summary>
-    /// Rolling occurs based on time intervals (e.g., hourly, daily).
-    /// </summary>
-    Time,
-
-    /// <summary>
-    /// Rolling occurs based on a combination of size and time conditions.
-    /// </summary>
-    /// <remarks>
-    /// Not yet implemented.
-    /// </remarks>
-    Hybrid
-}
-
-/// <summary>
-/// Represents the time interval used for time-based rolling.
-/// </summary>
-public enum RollingInterval
-{
-    /// <summary>
-    /// No time-based rolling is applied.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Roll logs every hour.
-    /// </summary>
-    Hour,
-
-    /// <summary>
-    /// Roll logs every day.
-    /// </summary>
-    Day,
-
-    /// <summary>
-    /// Roll logs every month.
-    /// </summary>
-    Month
-}
+#endregion

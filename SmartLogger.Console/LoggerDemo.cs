@@ -189,7 +189,7 @@ internal class LoggerDemo
                         Type = LogOutputDestination.FileSystem,
                         File = new FileConfiguration
                         {
-                            BasePath = "logs/app",
+                            FileName = "logs/app",
                             Extension = "log"
                         }
                     }
@@ -237,17 +237,17 @@ internal class LoggerDemo
                     Type = LogOutputDestination.FileSystem,
                     File = new FileConfiguration
                     {
-                        BasePath = "logs/perf",
+                        FileName = "logs/perf",
                         Extension = "log",
                         Naming = new FileNamingConfiguration
                         {
-                            IncludeDate = true,
-                            IncludeIndex = true
+                            Strategy = FileNamingStrategyType.Date,
+                            DateFormat = "yyyy-MM-dd"
                         },
-                        RollingPolicy = new RollingPolicyConfiguration
+                        Rolling = new FileRollingConfiguration
                         {
-                            RollingType = RollingType.Size,
-                            MaxFileSizeMB = 1 // force rolling quickly
+                            Strategy = RollingStrategyType.Size,
+                            MaxFileSizeMB = 10 // force rolling quickly
                         }
                     }
                 },

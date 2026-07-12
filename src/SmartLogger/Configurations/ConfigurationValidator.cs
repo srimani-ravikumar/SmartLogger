@@ -104,7 +104,7 @@ internal static class ConfigurationValidator
         if (appender.Destination.Type != LogOutputDestination.FileSystem)
             return;
 
-        if (!string.IsNullOrWhiteSpace(appender.Destination.File?.BasePath))
+        if (!string.IsNullOrWhiteSpace(appender.Destination.File?.FileName))
             return;
 
         throw new InvalidOperationException(

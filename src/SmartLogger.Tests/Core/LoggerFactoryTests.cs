@@ -45,7 +45,7 @@ namespace SmartLogger.Tests.Core
                     Type = LogOutputDestination.FileSystem,
                     File = new FileConfiguration
                     {
-                        BasePath = basePath,
+                        FileName = basePath,
                         Extension = "log"
                     }
                 },
@@ -424,7 +424,7 @@ namespace SmartLogger.Tests.Core
             {
                 Appenders = { CreateFileAppenderConfiguration(fileTarget) }
             };
-            secondConfig.Appenders[0].Destination.File!.RollingPolicy.RollingType = SmartLogger.Core.RollingType.Size;
+            secondConfig.Appenders[0].Destination.File!.Rolling.Strategy = RollingStrategyType.Size;
             var thirdFactory = CreateFactory(secondConfig);
             var thirdLogger = (LoggerImplementation)thirdFactory.GetOrCreateLogger("C");
 

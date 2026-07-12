@@ -1,8 +1,7 @@
-﻿using SmartLogger.Appenders.FileRolling;
+﻿using SmartLogger.Appenders.FileNaming;
+using SmartLogger.Appenders.FileRolling;
 using SmartLogger.Core;
 using System.Collections.Concurrent;
-using System.Diagnostics.Metrics;
-using System.Reflection.Emit;
 
 namespace SmartLogger.Appenders;
 
@@ -54,12 +53,13 @@ internal static class FileAppenderRegistry
         LogLevel logLevel,
         ILogOutputFormatterStrategy formatter,
         IRollingStrategy rollingStrategy,
+        IFileNamingStrategy namingStrategy,
         bool asyncEnabled)
     {
         var fileConfig = config.Destination.File!;
 
         // Key represents the logical file identity (shared appender per file)
-        var key = $"{fileConfig.BasePath}.{fileConfig.Extension}";
+        var key = $"{fileConfig.FileName}.{fileConfig.Extension}";
 
         var appender = _cache.GetOrAdd(key, _ =>
         {
@@ -68,7 +68,9 @@ internal static class FileAppenderRegistry
                 fileConfig,
                 logLevel,
                 formatter,
-                rollingStrategy);
+                rollingStrategy,
+                namingStrategy
+                );
 
             // Apply async wrapper only once during creation
             return asyncEnabled
@@ -103,8 +105,7 @@ internal static class FileAppenderRegistry
             case FileAppender fileAppender:
                 fileAppender.UpdateConfiguration(
                     logLevel,
-                    formatter,
-                    rollingStrategy);
+                    formatter);
                 break;
 
             case AsyncAppenderWrapper asyncWrapper
@@ -112,8 +113,7 @@ internal static class FileAppenderRegistry
 
                 fileAppender.UpdateConfiguration(
                     logLevel,
-                    formatter,
-                    rollingStrategy);
+                    formatter);
                 break;
         }
     }

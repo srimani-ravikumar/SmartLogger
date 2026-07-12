@@ -1,27 +1,10 @@
-This is sufficient. Since these are pure configuration models (POCOs) with computed properties and default values, no additional dependencies are required to produce a complete unit test plan.
-
-One observation before the test plan: unlike `LoggerManager`, these classes contain **no business logic** except for:
-
-* Default property initialization
-* `EnableDefaultConsoleAppender` computed property
-* Object graph initialization
-* Enum default values
-
-Accordingly, the unit tests should focus on **contract validation**, **default configuration correctness**, **computed property behavior**, and **configuration object integrity**, rather than behavioral interactions.
-
-I would **not** write tests that merely verify C# auto-properties unless they are part of the framework's public contract (for example, default values that downstream components depend on).
-
-A Principal Engineer would keep the suite focused on observable contracts and avoid low-value tests.
-
----
-
-# LogConfiguration Models Unit Tests
+# LogConfigurationHolder Unit Tests
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                      |
-| ----------- | ------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the SmartLogger configuration model classes, validating default configuration, computed properties, object graph initialization, and configuration contracts. |
+| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                                   |
+| ----------- | ------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SmartLogger | 1.1.0   | 2026-07-12 | Srimani | Updated Draft | Defined the unit test coverage for the SmartLogger configuration model classes, validating default configuration, computed properties, object graph initialization, configuration contracts, and the redesigned file configuration hierarchy. |
 
 # Objective
 
@@ -38,6 +21,8 @@ Validate that the SmartLogger configuration model classes correctly represent th
 * Testing Framework: **NUnit**
 * Mocking Framework: **None Required**
 * Target Framework: **.NET**
+
+---
 
 # LogConfigurationHolder Tests
 
@@ -102,6 +87,8 @@ Validated by:
 
 * `Appenders_WithMultipleConfiguredAppenders_ShouldContainAllConfiguredAppenders`
 
+---
+
 # LoggerOverrideConfiguration Tests
 
 ## Logger override should initialize with expected defaults
@@ -131,6 +118,8 @@ Validated by:
 
 * `LoggerOverride_WithCustomLogLevel_ShouldStoreValue`
 
+---
+
 # AppenderConfiguration Tests
 
 ## Appender configuration should initialize nested configuration objects
@@ -143,6 +132,8 @@ Verifies:
 
 * Destination initialized
 * Formatter initialized
+* Filter = null
+* AppenderLogLevel = null
 
 ---
 
@@ -168,6 +159,8 @@ Validated by:
 
 * `AppenderLogLevel_WithNullValue_ShouldRemainNull`
 
+---
+
 # DestinationConfiguration Tests
 
 ## Destination configuration should initialize with expected defaults
@@ -178,9 +171,8 @@ Validated by:
 
 Verifies:
 
-* Destination = Console
+* Type = Console
 * File = null
-* Database = null
 
 ---
 
@@ -192,11 +184,146 @@ Validated by:
 
 ---
 
-## Destination configuration should support database configuration
+# FileConfiguration Tests
+
+## File configuration should initialize with expected defaults
 
 Validated by:
 
-* `Destination_WithDatabaseConfiguration_ShouldStoreConfiguration`
+* `Constructor_ShouldInitializeDefaultFileConfiguration`
+
+Verifies:
+
+* Directory = Logs
+* FileName = Application
+* Extension = log
+* Naming initialized
+* Rolling initialized
+* Archive initialized
+* Retention initialized
+
+---
+
+## File configuration should support custom directory
+
+Validated by:
+
+* `Directory_WithConfiguredValue_ShouldStoreValue`
+
+---
+
+## File configuration should support custom file name
+
+Validated by:
+
+* `FileName_WithConfiguredValue_ShouldStoreValue`
+
+---
+
+## File configuration should support custom extensions
+
+Validated by:
+
+* `Extension_WithConfiguredValue_ShouldStoreValue`
+
+---
+
+# FileNamingConfiguration Tests
+
+## File naming configuration should initialize with expected defaults
+
+Validated by:
+
+* `Constructor_ShouldInitializeDefaultNamingConfiguration`
+
+Verifies:
+
+* Strategy = Date
+* DateFormat = yyyy-MM-dd
+
+---
+
+## File naming configuration should support custom naming options
+
+Validated by:
+
+* `FileNaming_WithCustomizedConfiguration_ShouldStoreValues`
+
+Verifies:
+
+* Strategy
+* DateFormat
+
+---
+
+# FileRollingConfiguration Tests
+
+## File rolling configuration should initialize with expected defaults
+
+Validated by:
+
+* `Constructor_ShouldInitializeDefaultRollingConfiguration`
+
+Verifies:
+
+* Strategy = Daily
+* MaxFileSizeMB = 10
+
+---
+
+## File rolling configuration should support size-based rolling
+
+Validated by:
+
+* `RollingConfiguration_WithSizeStrategy_ShouldStoreValues`
+
+---
+
+# ArchiveConfiguration Tests
+
+## Archive configuration should initialize with expected defaults
+
+Validated by:
+
+* `Constructor_ShouldInitializeDefaultArchiveConfiguration`
+
+Verifies:
+
+* Enabled = true
+* Directory = Archive
+* Compress = true
+
+---
+
+## Archive configuration should support custom archive settings
+
+Validated by:
+
+* `ArchiveConfiguration_WithCustomizedValues_ShouldStoreValues`
+
+---
+
+# RetentionConfiguration Tests
+
+## Retention configuration should initialize with expected defaults
+
+Validated by:
+
+* `Constructor_ShouldInitializeDefaultRetentionConfiguration`
+
+Verifies:
+
+* RetentionDays = 30
+
+---
+
+## Retention configuration should support custom retention settings
+
+Validated by:
+
+* `RetentionConfiguration_WithConfiguredRetentionDays_ShouldStoreValue`
+
+---
 
 # FormatterConfiguration Tests
 
@@ -263,6 +390,8 @@ Validated by:
 
 * `JsonFieldMappings_WithConfiguredMappings_ShouldContainConfiguredEntries`
 
+---
+
 # JsonFieldMappingConfiguration Tests
 
 ## JSON field mapping should initialize with expected defaults
@@ -270,6 +399,11 @@ Validated by:
 Validated by:
 
 * `Constructor_ShouldInitializeDefaultJsonFieldMapping`
+
+Verifies:
+
+* SourceField = Empty
+* TargetField = Empty
 
 ---
 
@@ -279,99 +413,7 @@ Validated by:
 
 * `JsonFieldMapping_WithCustomFields_ShouldStoreValues`
 
-# FileConfiguration Tests
-
-## File configuration should initialize with expected defaults
-
-Validated by:
-
-* `Constructor_ShouldInitializeDefaultFileConfiguration`
-
-Verifies:
-
-* BasePath
-* Extension
-* Naming
-* RollingPolicy
-
 ---
-
-## File configuration should support custom file paths
-
-Validated by:
-
-* `BasePath_WithConfiguredValue_ShouldStoreValue`
-
----
-
-## File configuration should support custom extensions
-
-Validated by:
-
-* `Extension_WithConfiguredValue_ShouldStoreValue`
-
-# FileNamingConfiguration Tests
-
-## File naming configuration should initialize with expected defaults
-
-Validated by:
-
-* `Constructor_ShouldInitializeDefaultNamingConfiguration`
-
-Verifies:
-
-* IncludeDate
-* DateFormat
-* IncludeIndex
-* Separator
-
----
-
-## File naming configuration should support custom naming options
-
-Validated by:
-
-* `FileNaming_WithCustomizedConfiguration_ShouldStoreValues`
-
-# RollingPolicyConfiguration Tests
-
-## Rolling policy should initialize with expected defaults
-
-Validated by:
-
-* `Constructor_ShouldInitializeDefaultRollingPolicy`
-
-Verifies:
-
-* RollingType = None
-* MaxFileSizeMB = 10
-* Interval = None
-* MaxRetainedFiles = 7
-* DateFormat = yyyy-MM-dd
-
----
-
-## Rolling policy should support size-based rolling
-
-Validated by:
-
-* `RollingPolicy_WithSizeBasedConfiguration_ShouldStoreValues`
-
----
-
-## Rolling policy should support time-based rolling
-
-Validated by:
-
-* `RollingPolicy_WithTimeBasedConfiguration_ShouldStoreValues`
-
----
-
-## Rolling policy should support hybrid rolling configuration
-
-Validated by:
-
-* `RollingPolicy_WithHybridConfiguration_ShouldStoreValues`
 
 # Enumeration Tests
 
@@ -382,10 +424,12 @@ Validated by:
 * `LogOutputDestination_ShouldContainExpectedValues`
 * `LogOutputFormat_ShouldContainExpectedValues`
 * `LogMessageLayoutType_ShouldContainExpectedValues`
-* `RollingType_ShouldContainExpectedValues`
-* `RollingInterval_ShouldContainExpectedValues`
+* `FileNamingStrategyType_ShouldContainExpectedValues`
+* `RollingStrategyType_ShouldContainExpectedValues`
 
 Verifies the public configuration contract exposed by the framework.
+
+---
 
 # Test Scope
 
@@ -400,9 +444,13 @@ The following responsibilities are intentionally tested separately within other 
 * Formatter implementation
 * Appender implementation
 * File naming generation
-* Rolling policy execution
+* File rolling execution
+* Archive processing
+* Retention cleanup
 * JSON serialization
 * Configuration reload behavior
+
+---
 
 # Coverage Summary
 
@@ -415,8 +463,11 @@ The following responsibilities are intentionally tested separately within other 
 | Configuration customization  |    ✅    |
 | Object graph integrity       |    ✅    |
 | Default JSON schema          |    ✅    |
-| Rolling configuration        |    ✅    |
 | File configuration           |    ✅    |
+| File naming configuration    |    ✅    |
+| File rolling configuration   |    ✅    |
+| Archive configuration        |    ✅    |
+| Retention configuration      |    ✅    |
 | Enumeration contract         |    ✅    |
 
 <p align="center"><strong>© 2026 Srimani. All rights reserved.</strong></p>

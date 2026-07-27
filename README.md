@@ -1,11 +1,8 @@
 # SmartLogger - Build Observability with Less Complixity :)
 
-### A Logging Framework Built to Understand How Real Systems Work
-
+> ***Before you begin, I want to clarify something:***
 > I didn’t build SmartLogger to replace existing logging libraries.
 > I built it to understand how they actually work under the hood.
-
----
 
 ## Why I Built This
 
@@ -24,8 +21,6 @@ Instead of just reading about these, I decided to **build one from scratch**.
 
 That’s how SmartLogger started.
 
----
-
 ## What This Project Is About
 
 SmartLogger is a **learning-focused project** where I explored how real-world systems are designed.
@@ -35,8 +30,6 @@ Instead of chasing features, I focused on:
 * Keeping logging **safe and predictable**
 * Making behavior **clear and understandable**
 * Designing for **real-world scenarios like concurrency and failures**
-
----
 
 ## What I Explored
 
@@ -48,21 +41,6 @@ Through this project, I tried to understand how systems handle:
 * Handling high load without slowing down the system
 * Keeping logging failures from affecting the main application
 
----
-
-## What I Built
-
-To explore these ideas, SmartLogger includes:
-
-* A simple log level system (Debug, Info, Warning, etc.)
-* Support for **correlation IDs** to trace request flows
-* Multiple outputs (console, file, extensible design)
-* Configurable message formats
-* Runtime configuration updates
-* Basic handling for multi-threaded scenarios
-
----
-
 ## What I Learned
 
 Building this helped me understand:
@@ -73,9 +51,7 @@ Building this helped me understand:
 * How different parts of a system stay **independent but connected**
 * Why observability is important in real-world applications
 
----
-
-## Here is how I want to sum up my experience
+## Here is how I want to sum up my experience...
 
 SmartLogger is not about creating “another logging library.”
 
@@ -85,6 +61,6 @@ It’s about learning how systems behave when:
 * failures happen
 * multiple things run at the same time
 
-> It helped me move from *using systems* to *understanding how they are built*.
+> It helped me move from ***using systems*** to ***understanding how they are built***.
 
----
+<p align="center"><strong>© 2026 Srimani. All rights reserved.</strong></p>

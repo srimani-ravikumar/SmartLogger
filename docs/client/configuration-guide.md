@@ -1,4 +1,5 @@
-# SmartLogger v1
+# SmartLogger v4.0.1
+
 # Configuration Guide
 
 ---

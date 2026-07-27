@@ -16,12 +16,12 @@
     <None Include="bin\Debug\net8.0\smartlogger.json" />
   </ItemGroup>
 
-  <!--<ItemGroup>
-    <PackageReference Include="SmartLogger" Version="1.0.5" />
-  </ItemGroup>-->
-
   <ItemGroup>
-    <ProjectReference Include="../src/SmartLogger/SmartLogger.csproj" />
+    <PackageReference Include="SmartLogger" Version="4.0.1" />
   </ItemGroup>
+
+  <!--<ItemGroup>
+    <ProjectReference Include="../src/SmartLogger/SmartLogger.csproj" />
+  </ItemGroup>-->
 
 </Project>

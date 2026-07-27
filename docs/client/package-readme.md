@@ -1,18 +1,8 @@
 ﻿## SmartLogger: Lightweight Logging for High-Performance Systems
 
-## Document Information
-
-| Project | Version | Date | Author | Status | Description |
-|---------|---------|------------|---------|-------------|-------------|
-| SmartLogger | 4.0.0 | 2026-07-12 | Srimani | Final | Provides an overview of SmartLogger, its architecture, key features, quick start guide, and configuration resources for developers. |
-
 > **Build observability without sacrificing performance or simplicity.**
 
-SmartLogger is a lightweight, extensible logging framework for .NET applications, designed to provide **structured, reliable, and configurable logging** without unnecessary complexity.
-
----
-
-## 💡 Why SmartLogger? - Design Philosophy
+## Why SmartLogger? - Design Philosophy
 
 > **Logging must never compromise application stability.**
 
@@ -54,12 +44,12 @@ This design ensures:
 ## Key Features
 
 * Priority-based log level management and filtering
-* Multiple output formats (PlainText, JSON, XML)
+* Multiple output formats (PlainText, JSON, extensible)
 * Multiple appenders (Console, FileSystem, extensible)
 * Offers both Synchronous and asynchronous logging pipeline
 * Runtime configuration reload with zero downtime
 * Correlation context for distributed systems
-* Overload protection and logging health monitoring
+* Overload protection
 * Configurable file rolling and simple & intuitive configurations
 
 ---
@@ -68,13 +58,13 @@ This design ensures:
 
 Get SmartLogger up and running in just a few steps.
 
-### 1️⃣ Install via NuGet
+### 1️. Install via NuGet
 
 ```powershell
 Install-Package SmartLogger
 ```
 
-### 2️⃣ Configure & Initialize SmartLogger
+### 2️. Configure & Initialize SmartLogger
 
 #### Option A – JSON Configuration *(Recommended)*
 
@@ -120,7 +110,7 @@ LoggerManager.Initialize(new InMemoryConfigurationProvider(configuration));
 
 Ideal for unit tests, sample applications, or scenarios where the logging configuration is created programmatically.
 
-### 3️⃣ Retrieve a Logger
+### 3️. Retrieve a Logger
 
 Using the current class (recommended)
 
@@ -134,7 +124,7 @@ Or using a custom logger name
 var logger = LoggerManager.GetLogger("OrderService");
 ```
 
-### 4️⃣ Write Log Messages
+### 4️. Write Log Messages
 
 ```csharp
 logger.Debug("Initializing payment workflow...");
@@ -143,7 +133,7 @@ logger.Warning("Inventory running low.");
 logger.Error("Payment gateway timeout.");
 ```
 
-### 5️⃣ Enable File Logging *(Optional)*
+### 5️. Enable File Logging *(Optional)*
 
 ```csharp
 var configuration = new LogConfigurationHolder
@@ -287,23 +277,9 @@ For a complete list of supported configuration options, examples, and best pract
 ## Ideal Use Cases
 
 * Learning system design
-* Web APIs
+* Monolith Web APIs
 * Background workers
-* Microservices
 * High-throughput systems
-
----
-
-## Summary
-
-SmartLogger provides a clean and extensible logging solution for .NET applications, with support for:
-
-* Structured logging
-* Correlation tracking
-* Runtime configuration
-* High-performance scenarios
-
-> Designed to help you build **observable, maintainable, and resilient systems**.
 
 ---
 

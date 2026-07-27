@@ -1,7 +1,3 @@
-Based on the implementation and your sample document, below is the matching test plan.
-
----
-
 # InMemoryConfigurationProvider Unit Tests
 
 ## Document Information

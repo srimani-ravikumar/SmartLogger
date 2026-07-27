@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../SmartLogger.Tests/SmartLogger.Tests.csproj" />
+  <Project Path="../SmartLogger/SmartLogger.csproj" />
+  <Project Path="SmartLogger.Client.Console.csproj" />
+</Solution>

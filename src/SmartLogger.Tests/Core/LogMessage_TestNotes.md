@@ -1,11 +1,3 @@
-The `LogMessage` class is self-contained, and I have enough information to generate the test plan. I don't need any additional dependency details because:
-
-* `LogLevel` is only treated as an enum value; its members don't affect the test plan.
-* `Environment.CurrentManagedThreadId` and `DateTime.UtcNow` are framework APIs whose observable behavior is sufficient for planning.
-* There are no external collaborators, services, configuration providers, or static dependencies that require mocking.
-
----
-
 # LogMessage Unit Tests
 
 ## Document Information

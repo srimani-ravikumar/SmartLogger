@@ -17,7 +17,7 @@
     <Authors>Srimani</Authors>
 
     <Description>
-      SmartLogger isn’t about replacing existing logging frameworks. It’s a hands-on attempt to understand how real logging systems are designed, especially how they behave under load, handle failures, and stay reliable in real-world scenarios.
+      Hey Reader, Let me be clear... SmartLogger is not about replacing existing logging frameworks. I built it to challenge my own understanding of system design: to find out 𝒊𝒇 𝒕𝒉𝒆 𝒊𝒅𝒆𝒂𝒔 𝒕𝒉𝒂𝒕 𝒎𝒂𝒌𝒆 𝒔𝒆𝒏𝒔𝒆 𝒐𝒏 𝒑𝒂𝒑𝒆𝒓 𝒔𝒕𝒊𝒍𝒍 𝒎𝒂𝒌𝒆 𝒔𝒆𝒏𝒔𝒆 𝒘𝒉𝒆𝒏 𝒕𝒉𝒆 𝒔𝒚𝒔𝒕𝒆𝒎 𝒊𝒔 𝒖𝒏𝒅𝒆𝒓 𝒑𝒓𝒆𝒔𝒔𝒖𝒓𝒆.
     </Description>
 
     <PackageTags>

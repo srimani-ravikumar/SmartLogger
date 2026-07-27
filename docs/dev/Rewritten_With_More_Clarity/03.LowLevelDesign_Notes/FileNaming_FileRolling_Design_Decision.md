@@ -4,9 +4,9 @@
 
 ## Document Information
 
-| Project | Version | Date | Author | Status | Description |
-|---------|---------|------------|---------|-------------|-------------|
-| SmartLogger | 1.0.0 | 2026-07-12 | Srimani | Final | Defines the architecture, design decisions, responsibilities, and lifecycle of the SmartLogger file logging subsystem, including file naming, rolling, archival, compression, and retention strategies. |
+Version | Date | Author | Status | Description |
+--------|------------|---------|-------------|-------------|
+1.0.0 | 2026-07-12 | Srimani | Final | Defines the architecture, design decisions, responsibilities, and lifecycle of the SmartLogger file logging subsystem, including file naming, rolling, archival, compression, and retention strategies. |
 
 # Design Philosophy
 

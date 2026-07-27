@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                                   |
-| ----------- | ------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SmartLogger | 1.1.0   | 2026-07-12 | Srimani | Updated Draft | Defined the unit test coverage for the SmartLogger configuration model classes, validating default configuration, computed properties, object graph initialization, configuration contracts, and the redesigned file configuration hierarchy. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                                   |
+------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+1.1.0   | 2026-07-12 | Srimani | Updated Draft | Defined the unit test coverage for the SmartLogger configuration model classes, validating default configuration, computed properties, object graph initialization, configuration contracts, and the redesigned file configuration hierarchy. |
 
 # Objective
 

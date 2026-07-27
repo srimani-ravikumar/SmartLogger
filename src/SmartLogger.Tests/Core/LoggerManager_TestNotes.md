@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                            |
-| ----------- | ------- | ---------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SmartLogger | 1.0.0   | 2026-07-10 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerManager` class, validating initialization, logger retrieval, configuration reload, caching behavior, and error handling. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                            |
+------- | ---------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+1.0.0   | 2026-07-10 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerManager` class, validating initialization, logger retrieval, configuration reload, caching behavior, and error handling. |
 
 # Objective
 

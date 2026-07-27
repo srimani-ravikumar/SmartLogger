@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                           |
-| ----------- | ------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LogMessage` class, validating builder behavior, property initialization, default values, validation, and object construction. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                           |
+------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LogMessage` class, validating builder behavior, property initialization, default values, validation, and object construction. |
 
 # Objective
 

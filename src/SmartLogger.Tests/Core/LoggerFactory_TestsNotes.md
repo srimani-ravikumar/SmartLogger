@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                                  |
-| ----------- | ------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerFactory` class, validating logger creation, caching, configuration resolution, appender composition, configuration updates, thread safety, and error handling. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                                                                  |
+------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerFactory` class, validating logger creation, caching, configuration resolution, appender composition, configuration updates, thread safety, and error handling. |
 
 # Objective
 

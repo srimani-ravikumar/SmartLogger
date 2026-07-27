@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                         |
-| ----------- | ------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `InMemoryConfigurationProvider` class, validating configuration loading, default configuration creation, configuration validation, and constructor behavior. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                                                         |
+------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `InMemoryConfigurationProvider` class, validating configuration loading, default configuration creation, configuration validation, and constructor behavior. |
 
 # Objective
 

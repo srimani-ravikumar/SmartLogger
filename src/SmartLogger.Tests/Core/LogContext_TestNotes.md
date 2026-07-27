@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                            |
-| ----------- | ------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LogContext` class, validating correlation scope management, nested scope behavior, async context propagation, execution flow isolation, and disposal behavior. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                                                            |
+------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LogContext` class, validating correlation scope management, nested scope behavior, async context propagation, execution flow isolation, and disposal behavior. |
 
 # Objective
 

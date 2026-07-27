@@ -2,9 +2,9 @@
 
 ## Document Information
 
-| Project     | Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                              |
-| ----------- | ------- | ---------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| SmartLogger | 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerImplementation` class, validating the logging pipeline, log level filtering, message construction, filter evaluation, appender dispatch, configuration updates, and management operations. |
+Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                              |
+------- | ---------- | ------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerImplementation` class, validating the logging pipeline, log level filtering, message construction, filter evaluation, appender dispatch, configuration updates, and management operations. |
 
 # Objective
 

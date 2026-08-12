@@ -16,6 +16,20 @@ namespace SmartLogger.Tests.Core
         {
             ResetFileAppenderRegistry();
             _provider = new Mock<ILogConfigurationProvider>();
+
+            // Ensure logs directory exists for file appender tests
+            var logsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+            if (!Directory.Exists(logsDirectory))
+            {
+                Directory.CreateDirectory(logsDirectory);
+            }
+
+            // Ensure default Logs directory exists
+            var defaultLogsDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+            if (!Directory.Exists(defaultLogsDir))
+            {
+                Directory.CreateDirectory(defaultLogsDir);
+            }
         }
 
         private static AppenderConfiguration CreateConsoleAppenderConfiguration(LogLevel? appenderLevel = null)
@@ -45,7 +59,8 @@ namespace SmartLogger.Tests.Core
                     Type = LogOutputDestination.FileSystem,
                     File = new FileConfiguration
                     {
-                        FileName = basePath,
+                        Directory = "logs",
+                        FileName = Path.GetFileName(basePath),
                         Extension = "log"
                     }
                 },
@@ -771,6 +786,372 @@ namespace SmartLogger.Tests.Core
             start.Set();
 
             Assert.DoesNotThrow(() => Task.WaitAll(tasks.ToArray()));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithOverrideAndAppenders_ShouldPreferOverrideLogLevel()
+        {
+            var factory = CreateFactory(new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = { CreateConsoleAppenderConfiguration(LogLevel.WARNING) },
+                LoggerOverrides =
+                {
+                    new LoggerOverrideConfiguration
+                    {
+                        LoggerName = "PreferredLogger",
+                        LogLevel = LogLevel.DEBUG
+                    }
+                }
+            });
+
+            var logger = (LoggerImplementation)factory.GetOrCreateLogger("PreferredLogger");
+
+            Assert.That(logger.EffectiveMinLogLevel, Is.EqualTo(LogLevel.DEBUG));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithNonMatchingOverride_ShouldUseResolvedLogLevel()
+        {
+            var factory = CreateFactory(new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = { CreateConsoleAppenderConfiguration(LogLevel.WARNING) },
+                LoggerOverrides =
+                {
+                    new LoggerOverrideConfiguration
+                    {
+                        LoggerName = "OtherLogger",
+                        LogLevel = LogLevel.DEBUG
+                    }
+                }
+            });
+
+            var logger = (LoggerImplementation)factory.GetOrCreateLogger("UnmatchedLogger");
+
+            Assert.That(logger.EffectiveMinLogLevel, Is.EqualTo(LogLevel.WARNING));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithSameFileNameInDifferentDirectories_ShouldReuseCachedAppender()
+        {
+            var fileName = "test";
+            var firstFactory = CreateFactory(new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = fileName,
+                                Extension = "log"
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            });
+            var secondFactory = CreateFactory(new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = fileName,
+                                Extension = "log"
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            });
+
+            var firstLogger = (LoggerImplementation)firstFactory.GetOrCreateLogger("A");
+            var secondLogger = (LoggerImplementation)secondFactory.GetOrCreateLogger("B");
+
+            Assert.That(firstLogger.GetLogAppenders().Single(), Is.SameAs(secondLogger.GetLogAppenders().Single()));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithDateNamingStrategy_ShouldCreateFileAppender()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = Guid.NewGuid().ToString("N"),
+                                Extension = "log",
+                                Naming = new FileNamingConfiguration
+                                {
+                                    Strategy = FileNamingStrategyType.Date
+                                }
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+            var logger = factory.GetOrCreateLogger("DateNamingLogger");
+
+            Assert.That(logger, Is.Not.Null);
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithDailyRollingStrategy_ShouldCreateFileAppender()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = Guid.NewGuid().ToString("N"),
+                                Extension = "log",
+                                Rolling = new FileRollingConfiguration
+                                {
+                                    Strategy = RollingStrategyType.Daily
+                                }
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+            var logger = factory.GetOrCreateLogger("DailyRollingLogger");
+
+            Assert.That(logger, Is.Not.Null);
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithSizeRollingStrategy_ShouldCreateFileAppender()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = Guid.NewGuid().ToString("N"),
+                                Extension = "log",
+                                Rolling = new FileRollingConfiguration
+                                {
+                                    Strategy = RollingStrategyType.Size,
+                                    MaxFileSizeMB = 1
+                                }
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+            var logger = factory.GetOrCreateLogger("SizeRollingLogger");
+
+            Assert.That(logger, Is.Not.Null);
+        }
+
+        [Test]
+        public void UpdateConfiguration_ShouldRefreshCachedFileAppender()
+        {
+            var fileTarget = $"logs/{Guid.NewGuid():N}";
+            var firstConfig = new LogConfigurationHolder
+            {
+                Appenders = { CreateFileAppenderConfiguration(fileTarget, LogLevel.INFO) }
+            };
+
+            var factory = CreateFactory(firstConfig);
+            var logger = (LoggerImplementation)factory.GetOrCreateLogger("RefreshAppender");
+            var originalAppender = logger.GetLogAppenders().Single();
+
+            var secondConfig = new LogConfigurationHolder
+            {
+                Appenders = { CreateFileAppenderConfiguration(fileTarget, LogLevel.DEBUG) }
+            };
+            factory.UpdateConfiguration(secondConfig);
+
+            var updatedAppender = logger.GetLogAppenders().Single();
+
+            Assert.That(updatedAppender, Is.SameAs(originalAppender));
+        }
+
+        [Test]
+        public void UpdateConfiguration_ShouldReuseExistingFileAppender()
+        {
+            var fileTarget = $"logs/{Guid.NewGuid():N}";
+            var factory = CreateFactory(new LogConfigurationHolder
+            {
+                Appenders = { CreateFileAppenderConfiguration(fileTarget) }
+            });
+
+            var logger = (LoggerImplementation)factory.GetOrCreateLogger("ReuseAppender");
+            var originalAppender = logger.GetLogAppenders().Single();
+
+            factory.UpdateConfiguration(new LogConfigurationHolder
+            {
+                Appenders = { CreateFileAppenderConfiguration(fileTarget) }
+            });
+
+            var reusedAppender = logger.GetLogAppenders().Single();
+
+            Assert.That(reusedAppender, Is.SameAs(originalAppender));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithUnsupportedNamingStrategy_ShouldThrowNotSupportedException()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = Guid.NewGuid().ToString("N"),
+                                Extension = "log",
+                                Naming = new FileNamingConfiguration
+                                {
+                                    Strategy = (FileNamingStrategyType)999
+                                }
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+
+            Assert.Throws<NotSupportedException>(() => factory.GetOrCreateLogger("UnsupportedNamingStrategy"));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithUnsupportedRollingStrategy_ShouldThrowNotSupportedException()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "logs",
+                                FileName = Guid.NewGuid().ToString("N"),
+                                Extension = "log",
+                                Rolling = new FileRollingConfiguration
+                                {
+                                    Strategy = (RollingStrategyType)999
+                                }
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+
+            Assert.Throws<NotSupportedException>(() => factory.GetOrCreateLogger("UnsupportedRollingStrategy"));
+        }
+
+        [Test]
+        public void GetOrCreateLogger_WithFileDestinationAndMissingFileConfiguration_ShouldThrow()
+        {
+            var config = new LogConfigurationHolder
+            {
+                Appenders =
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = null
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText,
+                            LayoutType = LogMessageLayoutType.Simple
+                        }
+                    }
+                }
+            };
+
+            var factory = CreateFactory(config);
+
+            Assert.Throws<NullReferenceException>(() => factory.GetOrCreateLogger("MissingFileConfig"));
         }
     }
 }

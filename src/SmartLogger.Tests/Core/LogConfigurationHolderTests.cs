@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using NUnit.Framework;
 using SmartLogger.Core;
 
 namespace SmartLogger.Tests.Core
@@ -64,6 +61,26 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
+        public void EnableAsyncLoggingProcess_WhenNotConfigured_ShouldReturnFalse()
+        {
+            // Arrange
+            var config = new LogConfigurationHolder();
+
+            // Act / Assert
+            Assert.That(config.EnableAsyncLoggingProcess, Is.False);
+        }
+
+        [Test]
+        public void LoggerOverrides_WithNoConfiguredOverrides_ShouldBeEmpty()
+        {
+            // Arrange
+            var config = new LogConfigurationHolder();
+
+            // Act / Assert
+            Assert.That(config.LoggerOverrides, Is.Empty);
+        }
+
+        [Test]
         public void LoggerOverrides_WithConfiguredOverrides_ShouldContainConfiguredEntries()
         {
             // Arrange
@@ -88,6 +105,39 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
+        public void LoggerOverrides_WhenReassigned_ShouldReplaceExistingCollection()
+        {
+            // Arrange
+            var config = new LogConfigurationHolder();
+            config.LoggerOverrides.Add(new LoggerOverrideConfiguration());
+
+            // Act
+            config.LoggerOverrides = new List<LoggerOverrideConfiguration>
+            {
+                new LoggerOverrideConfiguration { LoggerName = "Replaced" }
+            };
+
+            // Assert
+            Assert.That(config.LoggerOverrides, Has.Count.EqualTo(1));
+            Assert.That(config.LoggerOverrides[0].LoggerName, Is.EqualTo("Replaced"));
+        }
+
+        [Test]
+        public void Appenders_WhenReassigned_ShouldReplaceExistingCollection()
+        {
+            // Arrange
+            var config = new LogConfigurationHolder();
+            config.Appenders.Add(new AppenderConfiguration());
+
+            // Act
+            config.Appenders = new List<AppenderConfiguration>();
+
+            // Assert
+            Assert.That(config.Appenders, Is.Empty);
+            Assert.That(config.EnableDefaultConsoleAppender, Is.True);
+        }
+
+        [Test]
         public void Constructor_ShouldInitializeDefaultLoggerOverride()
         {
             // Act
@@ -109,7 +159,27 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
-        public void Constructor_ShouldInitializeNestedAppenderConfigurations()
+        public void LoggerOverride_WithCustomLogLevel_ShouldStoreValue()
+        {
+            // Arrange
+            var ov = new LoggerOverrideConfiguration { LogLevel = LogLevel.ERROR };
+
+            // Act / Assert
+            Assert.That(ov.LogLevel, Is.EqualTo(LogLevel.ERROR));
+        }
+
+        [Test]
+        public void LoggerOverride_WithoutLoggerName_ShouldRemainEmpty()
+        {
+            // Arrange
+            var ov = new LoggerOverrideConfiguration { LogLevel = LogLevel.WARNING };
+
+            // Act / Assert
+            Assert.That(ov.LoggerName, Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeNestedConfigurations()
         {
             // Act
             var app = new AppenderConfiguration();
@@ -144,7 +214,17 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
-        public void DestinationConfiguration_ShouldInitializeDefaults()
+        public void AppenderLogLevel_WithNullValue_ShouldRemainNull()
+        {
+            // Arrange
+            var app = new AppenderConfiguration { AppenderLogLevel = null };
+
+            // Act / Assert
+            Assert.That(app.AppenderLogLevel, Is.Null);
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultDestinationConfiguration()
         {
             // Act
             var dest = new DestinationConfiguration();
@@ -166,7 +246,27 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
-        public void FileConfiguration_ShouldInitializeDefaults()
+        public void Destination_WithConsoleType_ShouldLeaveFileConfigurationNull()
+        {
+            // Arrange
+            var dest = new DestinationConfiguration { Type = LogOutputDestination.Console };
+
+            // Act / Assert
+            Assert.That(dest.File, Is.Null);
+        }
+
+        [Test]
+        public void Destination_WithUnknownType_ShouldStoreValue()
+        {
+            // Arrange
+            var dest = new DestinationConfiguration { Type = LogOutputDestination.Unknown };
+
+            // Act / Assert
+            Assert.That(dest.Type, Is.EqualTo(LogOutputDestination.Unknown));
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultFileConfiguration()
         {
             // Act
             var file = new FileConfiguration();
@@ -182,90 +282,346 @@ namespace SmartLogger.Tests.Core
         }
 
         [Test]
-        public void FileNamingConfiguration_DefaultsAndCustom()
+        public void Directory_WithConfiguredValue_ShouldStoreValue()
         {
-            var n = new FileNamingConfiguration();
-            Assert.That(n.Strategy, Is.EqualTo(FileNamingStrategyType.Date));
-            Assert.That(n.DateFormat, Is.EqualTo("yyyy-MM-dd"));
+            // Arrange
+            var file = new FileConfiguration { Directory = "C:\\Logs" };
 
-            n.Strategy = FileNamingStrategyType.Timestamp;
-            n.DateFormat = "yyyyMMddHHmmss";
-            Assert.That(n.Strategy, Is.EqualTo(FileNamingStrategyType.Timestamp));
-            Assert.That(n.DateFormat, Is.EqualTo("yyyyMMddHHmmss"));
+            // Act / Assert
+            Assert.That(file.Directory, Is.EqualTo("C:\\Logs"));
         }
 
         [Test]
-        public void FileRollingConfiguration_DefaultsAndCustom()
+        public void FileName_WithConfiguredValue_ShouldStoreValue()
         {
-            var r = new FileRollingConfiguration();
-            Assert.That(r.Strategy, Is.EqualTo(RollingStrategyType.Daily));
-            Assert.That(r.MaxFileSizeMB, Is.EqualTo(10));
+            // Arrange
+            var file = new FileConfiguration { FileName = "Payments" };
 
-            r.Strategy = RollingStrategyType.Size;
-            r.MaxFileSizeMB = 50;
-            Assert.That(r.Strategy, Is.EqualTo(RollingStrategyType.Size));
-            Assert.That(r.MaxFileSizeMB, Is.EqualTo(50));
+            // Act / Assert
+            Assert.That(file.FileName, Is.EqualTo("Payments"));
         }
 
         [Test]
-        public void ArchiveConfiguration_DefaultsAndCustom()
+        public void Extension_WithConfiguredValue_ShouldStoreValue()
         {
-            var a = new ArchiveConfiguration();
-            Assert.That(a.Enabled, Is.True);
-            Assert.That(a.Directory, Is.EqualTo("Archive"));
-            Assert.That(a.Compress, Is.True);
+            // Arrange
+            var file = new FileConfiguration { Extension = "json" };
 
-            a.Enabled = false;
-            a.Directory = "Old";
-            a.Compress = false;
-            Assert.That(a.Enabled, Is.False);
-            Assert.That(a.Directory, Is.EqualTo("Old"));
-            Assert.That(a.Compress, Is.False);
+            // Act / Assert
+            Assert.That(file.Extension, Is.EqualTo("json"));
         }
 
         [Test]
-        public void RetentionConfiguration_DefaultsAndCustom()
+        public void Constructor_ShouldInitializeDefaultNamingConfiguration()
         {
-            var t = new RetentionConfiguration();
-            Assert.That(t.RetentionDays, Is.EqualTo(30));
+            // Act
+            var naming = new FileNamingConfiguration();
 
-            t.RetentionDays = 7;
-            Assert.That(t.RetentionDays, Is.EqualTo(7));
+            // Assert
+            Assert.That(naming.Strategy, Is.EqualTo(FileNamingStrategyType.Date));
+            Assert.That(naming.DateFormat, Is.EqualTo("yyyy-MM-dd"));
         }
 
         [Test]
-        public void FormatterConfiguration_Defaults()
+        public void FileNaming_WithCustomizedConfiguration_ShouldStoreValues()
         {
-            var f = new FormatterConfiguration();
-            Assert.That(f.OutputFormat, Is.EqualTo(LogOutputFormat.PlainText));
-            Assert.That(f.LayoutType, Is.EqualTo(LogMessageLayoutType.Simple));
-            Assert.That(f.Pattern, Is.EqualTo(string.Empty));
-            CollectionAssert.AreEqual(new[] { "timestamp", "level", "thread", "correlation", "source", "message" }, f.IncludedJsonFields);
-            Assert.That(f.JsonFieldMappings, Is.Not.Null);
-            Assert.That(f.JsonFieldMappings, Is.Empty);
+            // Arrange
+            var naming = new FileNamingConfiguration
+            {
+                Strategy = FileNamingStrategyType.Timestamp,
+                DateFormat = "yyyyMMddHHmmss"
+            };
+
+            // Act / Assert
+            Assert.That(naming.Strategy, Is.EqualTo(FileNamingStrategyType.Timestamp));
+            Assert.That(naming.DateFormat, Is.EqualTo("yyyyMMddHHmmss"));
         }
 
         [Test]
-        public void JsonFieldMappingConfiguration_DefaultsAndCustom()
+        public void FileNaming_WithCustomStrategy_ShouldIgnoreDateFormatRequirement()
         {
-            var m = new JsonFieldMappingConfiguration();
-            Assert.That(m.SourceField, Is.EqualTo(string.Empty));
-            Assert.That(m.TargetField, Is.EqualTo(string.Empty));
+            // Arrange
+            var naming = new FileNamingConfiguration
+            {
+                Strategy = FileNamingStrategyType.Custom,
+                DateFormat = string.Empty
+            };
 
-            m.SourceField = "timestamp";
-            m.TargetField = "ts";
-            Assert.That(m.SourceField, Is.EqualTo("timestamp"));
-            Assert.That(m.TargetField, Is.EqualTo("ts"));
+            // Act / Assert
+            Assert.That(naming.Strategy, Is.EqualTo(FileNamingStrategyType.Custom));
+            Assert.That(naming.DateFormat, Is.EqualTo(string.Empty));
         }
 
         [Test]
-        public void Enumeration_Definitions_ArePresent()
+        public void Constructor_ShouldInitializeDefaultRollingConfiguration()
         {
-            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.Console));
-            Assert.That(Enum.IsDefined(typeof(LogOutputFormat), LogOutputFormat.PlainText));
-            Assert.That(Enum.IsDefined(typeof(LogMessageLayoutType), LogMessageLayoutType.Simple));
-            Assert.That(Enum.IsDefined(typeof(FileNamingStrategyType), FileNamingStrategyType.Date));
-            Assert.That(Enum.IsDefined(typeof(RollingStrategyType), RollingStrategyType.Daily));
+            // Act
+            var rolling = new FileRollingConfiguration();
+
+            // Assert
+            Assert.That(rolling.Strategy, Is.EqualTo(RollingStrategyType.Daily));
+            Assert.That(rolling.MaxFileSizeMB, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void RollingConfiguration_WithSizeStrategy_ShouldStoreValues()
+        {
+            // Arrange
+            var rolling = new FileRollingConfiguration
+            {
+                Strategy = RollingStrategyType.Size,
+                MaxFileSizeMB = 50
+            };
+
+            // Act / Assert
+            Assert.That(rolling.Strategy, Is.EqualTo(RollingStrategyType.Size));
+            Assert.That(rolling.MaxFileSizeMB, Is.EqualTo(50));
+        }
+
+        [Test]
+        public void RollingConfiguration_WithDailyStrategy_ShouldRetainDefaultMaxFileSize()
+        {
+            // Arrange
+            var rolling = new FileRollingConfiguration { Strategy = RollingStrategyType.Daily };
+
+            // Act / Assert
+            Assert.That(rolling.MaxFileSizeMB, Is.EqualTo(10));
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultArchiveConfiguration()
+        {
+            // Act
+            var archive = new ArchiveConfiguration();
+
+            // Assert
+            Assert.That(archive.Enabled, Is.True);
+            Assert.That(archive.Directory, Is.EqualTo("Archive"));
+            Assert.That(archive.Compress, Is.True);
+        }
+
+        [Test]
+        public void ArchiveConfiguration_WithCustomizedValues_ShouldStoreValues()
+        {
+            // Arrange
+            var archive = new ArchiveConfiguration
+            {
+                Directory = "Old",
+                Compress = false
+            };
+
+            // Act / Assert
+            Assert.That(archive.Directory, Is.EqualTo("Old"));
+            Assert.That(archive.Compress, Is.False);
+        }
+
+        [Test]
+        public void ArchiveConfiguration_WhenDisabled_ShouldReturnFalse()
+        {
+            // Arrange
+            var archive = new ArchiveConfiguration { Enabled = false };
+
+            // Act / Assert
+            Assert.That(archive.Enabled, Is.False);
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultRetentionConfiguration()
+        {
+            // Act
+            var retention = new RetentionConfiguration();
+
+            // Assert
+            Assert.That(retention.RetentionDays, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void RetentionConfiguration_WithConfiguredRetentionDays_ShouldStoreValue()
+        {
+            // Arrange
+            var retention = new RetentionConfiguration { RetentionDays = 7 };
+
+            // Act / Assert
+            Assert.That(retention.RetentionDays, Is.EqualTo(7));
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultFormatterConfiguration()
+        {
+            // Act
+            var formatter = new FormatterConfiguration();
+
+            // Assert
+            Assert.That(formatter.OutputFormat, Is.EqualTo(LogOutputFormat.PlainText));
+            Assert.That(formatter.LayoutType, Is.EqualTo(LogMessageLayoutType.Simple));
+            Assert.That(formatter.Pattern, Is.EqualTo(string.Empty));
+            Assert.That(formatter.IncludedJsonFields, Is.Not.Null);
+            Assert.That(formatter.JsonFieldMappings, Is.Empty);
+        }
+
+        [Test]
+        public void IncludedJsonFields_ShouldContainExpectedDefaultFields()
+        {
+            // Act
+            var formatter = new FormatterConfiguration();
+
+            // Assert
+            Assert.That(
+                formatter.IncludedJsonFields,
+                Is.EqualTo(new[] { "timestamp", "level", "thread", "correlation", "source", "message" }));
+        }
+
+        [Test]
+        public void OutputFormat_WithConfiguredValue_ShouldStoreValue()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration { OutputFormat = LogOutputFormat.Json };
+
+            // Act / Assert
+            Assert.That(formatter.OutputFormat, Is.EqualTo(LogOutputFormat.Json));
+        }
+
+        [Test]
+        public void LayoutType_WithConfiguredValue_ShouldStoreValue()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration { LayoutType = LogMessageLayoutType.Detailed };
+
+            // Act / Assert
+            Assert.That(formatter.LayoutType, Is.EqualTo(LogMessageLayoutType.Detailed));
+        }
+
+        [Test]
+        public void Pattern_WithCustomPattern_ShouldStoreValue()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration
+            {
+                LayoutType = LogMessageLayoutType.Custom,
+                Pattern = "%date [%level] %message"
+            };
+
+            // Act / Assert
+            Assert.That(formatter.Pattern, Is.EqualTo("%date [%level] %message"));
+        }
+
+        [Test]
+        public void Pattern_WithSimpleLayout_ShouldRemainEmpty()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration { LayoutType = LogMessageLayoutType.Simple };
+
+            // Act / Assert
+            Assert.That(formatter.Pattern, Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void JsonFieldMappings_WithConfiguredMappings_ShouldContainConfiguredEntries()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration();
+            formatter.JsonFieldMappings.Add(new JsonFieldMappingConfiguration
+            {
+                SourceField = "timestamp",
+                TargetField = "ts"
+            });
+
+            // Act / Assert
+            Assert.That(formatter.JsonFieldMappings, Has.Count.EqualTo(1));
+            Assert.That(formatter.JsonFieldMappings[0].TargetField, Is.EqualTo("ts"));
+        }
+
+        [Test]
+        public void IncludedJsonFields_WhenReassigned_ShouldContainOnlyConfiguredFields()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration
+            {
+                IncludedJsonFields = new List<string> { "level", "message" }
+            };
+
+            // Act / Assert
+            Assert.That(formatter.IncludedJsonFields, Is.EqualTo(new[] { "level", "message" }));
+        }
+
+        [Test]
+        public void IncludedJsonFields_WhenCleared_ShouldBeEmpty()
+        {
+            // Arrange
+            var formatter = new FormatterConfiguration();
+
+            // Act
+            formatter.IncludedJsonFields.Clear();
+
+            // Assert
+            Assert.That(formatter.IncludedJsonFields, Is.Empty);
+        }
+
+        [Test]
+        public void Constructor_ShouldInitializeDefaultJsonFieldMapping()
+        {
+            // Act
+            var mapping = new JsonFieldMappingConfiguration();
+
+            // Assert
+            Assert.That(mapping.SourceField, Is.EqualTo(string.Empty));
+            Assert.That(mapping.TargetField, Is.EqualTo(string.Empty));
+        }
+
+        [Test]
+        public void JsonFieldMapping_WithCustomFields_ShouldStoreValues()
+        {
+            // Arrange
+            var mapping = new JsonFieldMappingConfiguration
+            {
+                SourceField = "correlation",
+                TargetField = "cid"
+            };
+
+            // Act / Assert
+            Assert.That(mapping.SourceField, Is.EqualTo("correlation"));
+            Assert.That(mapping.TargetField, Is.EqualTo("cid"));
+        }
+
+        [Test]
+        public void LogOutputDestination_ShouldContainExpectedValues()
+        {
+            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.Unknown), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.Console), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.FileSystem), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.DatabaseSystem), Is.True);
+        }
+
+        [Test]
+        public void LogOutputFormat_ShouldContainExpectedValues()
+        {
+            Assert.That(Enum.IsDefined(typeof(LogOutputFormat), LogOutputFormat.PlainText), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputFormat), LogOutputFormat.Json), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputFormat), LogOutputFormat.Xml), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputFormat), (LogOutputFormat)2), Is.False);
+        }
+
+        [Test]
+        public void LogMessageLayoutType_ShouldContainExpectedValues()
+        {
+            Assert.That(Enum.IsDefined(typeof(LogMessageLayoutType), LogMessageLayoutType.Simple), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogMessageLayoutType), LogMessageLayoutType.Detailed), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogMessageLayoutType), LogMessageLayoutType.Custom), Is.True);
+        }
+
+        [Test]
+        public void FileNamingStrategyType_ShouldContainExpectedValues()
+        {
+            Assert.That(Enum.IsDefined(typeof(FileNamingStrategyType), FileNamingStrategyType.Date), Is.True);
+            Assert.That(Enum.IsDefined(typeof(FileNamingStrategyType), FileNamingStrategyType.Timestamp), Is.True);
+            Assert.That(Enum.IsDefined(typeof(FileNamingStrategyType), FileNamingStrategyType.Custom), Is.True);
+        }
+
+        [Test]
+        public void RollingStrategyType_ShouldContainExpectedValues()
+        {
+            Assert.That(Enum.IsDefined(typeof(RollingStrategyType), RollingStrategyType.Daily), Is.True);
+            Assert.That(Enum.IsDefined(typeof(RollingStrategyType), RollingStrategyType.Size), Is.True);
         }
     }
 }

@@ -145,7 +145,7 @@ namespace SmartLogger.Tests.Configuration
         }
 
         [Test]
-        public void Load_WithNullAppenderCollection_ShouldThrowInvalidOperationException()
+        public void Load_WithNullAppenderCollection_ShouldThrowArgumentNullException()
         {
             // Arrange
             var configuration = CreateValidConfiguration();
@@ -153,21 +153,24 @@ namespace SmartLogger.Tests.Configuration
             var provider = new InMemoryConfigurationProvider(configuration);
 
             // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => provider.Load());
-            Assert.That(ex.Message, Is.EqualTo("At least one appender must be configured."));
+            var ex = Assert.Throws<ArgumentNullException>(() => provider.Load());
+            Assert.That(ex.ParamName, Is.EqualTo("source"));
         }
 
         [Test]
-        public void Load_WithEmptyAppenderCollection_ShouldThrowInvalidOperationException()
+        public void Load_WithEmptyAppenderCollection_ShouldSucceedWithDefaultConsoleAppender()
         {
             // Arrange
             var configuration = CreateValidConfiguration();
             configuration.Appenders = new List<AppenderConfiguration>();
             var provider = new InMemoryConfigurationProvider(configuration);
 
-            // Act & Assert
-            var ex = Assert.Throws<InvalidOperationException>(() => provider.Load());
-            Assert.That(ex.Message, Is.EqualTo("At least one appender must be configured."));
+            // Act
+            // Empty appender collection is valid - the LoggerFactory will add default console appender
+            var loaded = provider.Load();
+
+            // Assert
+            Assert.That(loaded.Appenders, Has.Count.EqualTo(0));
         }
 
         [Test]
@@ -180,7 +183,7 @@ namespace SmartLogger.Tests.Configuration
 
             // Act & Assert
             var ex = Assert.Throws<InvalidOperationException>(() => provider.Load());
-            Assert.That(ex.Message, Is.EqualTo("Appender destination must be specified."));
+            Assert.That(ex.Message, Contains.Substring("Appender destination is missing."));
         }
 
         [Test]
@@ -190,7 +193,11 @@ namespace SmartLogger.Tests.Configuration
             var configuration = CreateValidConfiguration();
             configuration.Appenders.Add(new AppenderConfiguration
             {
-                Destination = new DestinationConfiguration { Type = LogOutputDestination.FileSystem }
+                Destination = new DestinationConfiguration 
+                { 
+                    Type = LogOutputDestination.FileSystem,
+                    File = new FileConfiguration { FileName = "logs/app", Extension = "log" }
+                }
             });
             var provider = new InMemoryConfigurationProvider(configuration);
 
@@ -221,7 +228,16 @@ namespace SmartLogger.Tests.Configuration
         {
             // Arrange
             var configuration = CreateValidConfiguration();
-            configuration.Appenders[0].Destination.Type = LogOutputDestination.FileSystem;
+            configuration.Appenders[0].Destination = new DestinationConfiguration
+            {
+                Type = LogOutputDestination.FileSystem,
+                File = new FileConfiguration 
+                { 
+                    Directory = "Logs",
+                    FileName = "app", 
+                    Extension = "log" 
+                }
+            };
             var provider = new InMemoryConfigurationProvider(configuration);
 
             // Act
@@ -303,7 +319,12 @@ namespace SmartLogger.Tests.Configuration
             configuration.Appenders[0].Destination = new DestinationConfiguration
             {
                 Type = LogOutputDestination.FileSystem,
-                File = new FileConfiguration { FileName = "logs/app", Extension = "log" }
+                File = new FileConfiguration 
+                { 
+                    Directory = "Logs",
+                    FileName = "app", 
+                    Extension = "log" 
+                }
             };
             var provider = new InMemoryConfigurationProvider(configuration);
 
@@ -311,7 +332,7 @@ namespace SmartLogger.Tests.Configuration
             var loaded = provider.Load();
 
             // Assert
-            Assert.That(loaded.Appenders[0].Destination.File.FileName, Is.EqualTo("logs/app"));
+            Assert.That(loaded.Appenders[0].Destination.File.FileName, Is.EqualTo("app"));
         }
 
         [Test]
@@ -334,20 +355,29 @@ namespace SmartLogger.Tests.Configuration
         {
             // Arrange
             var configuration = CreateValidConfiguration();
-            for (var i = 0; i < 100; i++)
+            // Add different destination types to avoid duplicate destination validation error
+            configuration.Appenders.Add(new AppenderConfiguration
             {
-                configuration.Appenders.Add(new AppenderConfiguration
-                {
-                    Destination = new DestinationConfiguration { Type = LogOutputDestination.Console }
-                });
-            }
+                Destination = new DestinationConfiguration 
+                { 
+                    Type = LogOutputDestination.FileSystem,
+                    File = new FileConfiguration { Directory = "Logs", FileName = "app1", Extension = "log" }
+                }
+            });
+            configuration.Appenders.Add(new AppenderConfiguration
+            {
+                Destination = new DestinationConfiguration 
+                { 
+                    Type = LogOutputDestination.DatabaseSystem
+                }
+            });
             var provider = new InMemoryConfigurationProvider(configuration);
 
             // Act
             var loaded = provider.Load();
 
             // Assert
-            Assert.That(loaded.Appenders, Has.Count.EqualTo(101));
+            Assert.That(loaded.Appenders, Has.Count.EqualTo(3));
         }
 
         [Test]

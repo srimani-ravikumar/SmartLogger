@@ -5,6 +5,7 @@
 Version | Date       | Author  | Status        | Description                                                                                                                                                                                                  |
 ------- | ---------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 1.0.0   | 2026-07-11 | Srimani | Initial Draft | Defined the unit test coverage for the `LoggerFactory` class, validating logger creation, caching, configuration resolution, appender composition, configuration updates, thread safety, and error handling. |
+1.1.0   | 2026-07-12 | Srimani | Revised Draft | Revised against the updated appender composition path. Added coverage for file naming strategy selection, mandatory rolling strategy selection, file identity based appender sharing, and missing file configuration. |
 
 # Objective
 
@@ -13,7 +14,8 @@ Validate that **LoggerFactory** correctly acts as the composition root for the S
 * Creating configured logger instances.
 * Caching logger instances.
 * Resolving effective log levels.
-* Constructing appenders from configuration.
+* Constructing appenders, formatters, naming and rolling strategies from configuration.
+* Sharing file appenders by file identity.
 * Supporting asynchronous logging.
 * Refreshing existing logger configuration during runtime configuration updates.
 * Handling invalid configuration and unsupported scenarios appropriately.
@@ -161,6 +163,20 @@ Validated by:
 
 Reflects the current implementation using `LastOrDefault()`.
 
+## Factory should prefer a logger override over the resolved appender level
+
+Validated by:
+
+* `GetOrCreateLogger_WithOverrideAndAppenders_ShouldPreferOverrideLogLevel`
+
+## Factory should ignore overrides configured for other loggers
+
+Validated by:
+
+* `GetOrCreateLogger_WithNonMatchingOverride_ShouldUseResolvedLogLevel`
+
+Logger names are matched exactly and are case sensitive.
+
 ---
 
 # Console Appender Tests
@@ -230,6 +246,27 @@ Verifies that the existing file appender instance is reused while its rolling st
 Validated by:
 
 * `GetOrCreateLogger_WithDifferentFileTargets_ShouldCreateDifferentFileAppenders`
+
+## Factory should share file appenders across directories using the same file identity
+
+Validated by:
+
+* `GetOrCreateLogger_WithSameFileNameInDifferentDirectories_ShouldReuseCachedAppender`
+
+File identity is currently derived from file name and extension only.
+
+## Factory should build the configured file naming strategy
+
+Validated by:
+
+* `GetOrCreateLogger_WithDateNamingStrategy_ShouldCreateFileAppender`
+
+## Factory should build the configured rolling strategy
+
+Validated by:
+
+* `GetOrCreateLogger_WithDailyRollingStrategy_ShouldCreateFileAppender`
+* `GetOrCreateLogger_WithSizeRollingStrategy_ShouldCreateFileAppender`
 
 ---
 
@@ -339,19 +376,35 @@ Validated by:
 
 * `GetOrCreateLogger_WithUnsupportedDestination_ShouldThrowNotSupportedException`
 
+Covers `Unknown` and `DatabaseSystem` destinations.
+
 ## Factory should propagate formatter creation failures
 
 Validated by:
 
 * `GetOrCreateLogger_WithUnsupportedFormatter_ShouldThrowNotSupportedException`
 
-## Factory should allow appenders without rolling strategies
+## Factory should reject unsupported file naming strategies
 
 Validated by:
 
-* `GetOrCreateLogger_WithNoRollingStrategy_ShouldCreateFileAppender`
+* `GetOrCreateLogger_WithUnsupportedNamingStrategy_ShouldThrowNotSupportedException`
 
-Verifies that `RollingFactory.Create()` returning `null` is supported.
+Only the date based strategy is currently implemented.
+
+## Factory should reject unsupported rolling strategies
+
+Validated by:
+
+* `GetOrCreateLogger_WithUnsupportedRollingStrategy_ShouldThrowNotSupportedException`
+
+A rolling strategy is mandatory for file appenders.
+
+## Factory should reject a file destination without file configuration
+
+Validated by:
+
+* `GetOrCreateLogger_WithFileDestinationAndMissingFileConfiguration_ShouldThrow`
 
 ---
 
@@ -415,7 +468,8 @@ The following responsibilities are intentionally tested separately within their 
 * Log filtering
 * Formatter selection (`FormatterFactory`)
 * Layout selection (`LayoutFactory`)
-* Rolling strategy selection (`RollingFactory`)
+* Rolling strategy selection (`RollingStrategyFactory`)
+* File naming strategy selection (`FileNamingStrategyFactory`)
 * File appender registry lifecycle and configuration refresh (`FileAppenderRegistry`)
 * Individual appender implementations (`ConsoleAppender`, `FileAppender`, etc.)
 * Asynchronous appender execution
@@ -435,6 +489,9 @@ The following responsibilities are intentionally tested separately within their 
 | Console appender creation     |    ✅    |
 | File appender creation        |    ✅    |
 | File appender caching         |    ✅    |
+| File identity resolution      |    ✅    |
+| Naming strategy composition   |    ✅    |
+| Rolling strategy composition  |    ✅    |
 | Runtime file appender refresh |    ✅    |
 | Async appender composition    |    ✅    |
 | Configuration updates         |    ✅    |

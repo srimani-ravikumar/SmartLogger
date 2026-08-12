@@ -5,6 +5,7 @@
 Version | Date       | Author  | Status        | Description                                                                                                                                                                                                                                   |
 ------- | ---------- | ------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 1.1.0   | 2026-07-12 | Srimani | Updated Draft | Defined the unit test coverage for the SmartLogger configuration model classes, validating default configuration, computed properties, object graph initialization, configuration contracts, and the redesigned file configuration hierarchy. |
+1.2.0   | 2026-08-12 | Srimani | Revised Draft | Revised against the updated configuration model. Added negative and boundary coverage for optional configuration, unset values, collection reassignment, and unused configuration branches. |
 
 # Objective
 
@@ -15,6 +16,7 @@ Validate that the SmartLogger configuration model classes correctly represent th
 * Maintaining configuration contracts.
 * Computing derived configuration values correctly.
 * Supporting customization through configuration objects.
+* Behaving predictably when configuration is missing, empty, or unset.
 
 # Test Environment
 
@@ -89,6 +91,31 @@ Validated by:
 
 ---
 
+## Configuration should allow collections to be replaced
+
+Validated by:
+
+* `LoggerOverrides_WhenReassigned_ShouldReplaceExistingCollection`
+* `Appenders_WhenReassigned_ShouldReplaceExistingCollection`
+
+---
+
+## Configuration should keep asynchronous logging disabled unless explicitly enabled
+
+Validated by:
+
+* `EnableAsyncLoggingProcess_WhenNotConfigured_ShouldReturnFalse`
+
+---
+
+## Configuration should allow logger overrides to remain empty
+
+Validated by:
+
+* `LoggerOverrides_WithNoConfiguredOverrides_ShouldBeEmpty`
+
+---
+
 # LoggerOverrideConfiguration Tests
 
 ## Logger override should initialize with expected defaults
@@ -117,6 +144,14 @@ Validated by:
 Validated by:
 
 * `LoggerOverride_WithCustomLogLevel_ShouldStoreValue`
+
+---
+
+## Logger override should allow the logger name to remain unset
+
+Validated by:
+
+* `LoggerOverride_WithoutLoggerName_ShouldRemainEmpty`
 
 ---
 
@@ -184,6 +219,22 @@ Validated by:
 
 ---
 
+## Destination configuration should leave file configuration unset for non-file destinations
+
+Validated by:
+
+* `Destination_WithConsoleType_ShouldLeaveFileConfigurationNull`
+
+---
+
+## Destination configuration should support an unknown destination
+
+Validated by:
+
+* `Destination_WithUnknownType_ShouldStoreValue`
+
+---
+
 # FileConfiguration Tests
 
 ## File configuration should initialize with expected defaults
@@ -243,6 +294,14 @@ Verifies:
 
 ---
 
+## File naming configuration should support a custom naming strategy without a date format
+
+Validated by:
+
+* `FileNaming_WithCustomStrategy_ShouldIgnoreDateFormatRequirement`
+
+---
+
 ## File naming configuration should support custom naming options
 
 Validated by:
@@ -279,6 +338,14 @@ Validated by:
 
 ---
 
+## File rolling configuration should retain the size threshold for daily rolling
+
+Validated by:
+
+* `RollingConfiguration_WithDailyStrategy_ShouldRetainDefaultMaxFileSize`
+
+---
+
 # ArchiveConfiguration Tests
 
 ## Archive configuration should initialize with expected defaults
@@ -300,6 +367,14 @@ Verifies:
 Validated by:
 
 * `ArchiveConfiguration_WithCustomizedValues_ShouldStoreValues`
+
+---
+
+## Archive configuration should support archival being disabled
+
+Validated by:
+
+* `ArchiveConfiguration_WhenDisabled_ShouldReturnFalse`
 
 ---
 
@@ -392,6 +467,23 @@ Validated by:
 
 ---
 
+## Formatter configuration should allow the pattern to remain unset for non-custom layouts
+
+Validated by:
+
+* `Pattern_WithSimpleLayout_ShouldRemainEmpty`
+
+---
+
+## Formatter configuration should allow the JSON field list to be replaced or cleared
+
+Validated by:
+
+* `IncludedJsonFields_WhenReassigned_ShouldContainOnlyConfiguredFields`
+* `IncludedJsonFields_WhenCleared_ShouldBeEmpty`
+
+---
+
 # JsonFieldMappingConfiguration Tests
 
 ## JSON field mapping should initialize with expected defaults
@@ -469,5 +561,8 @@ The following responsibilities are intentionally tested separately within other 
 | Archive configuration        |    ✅    |
 | Retention configuration      |    ✅    |
 | Enumeration contract         |    ✅    |
+| Optional / unset values      |    ✅    |
+| Empty collections            |    ✅    |
+| Collection reassignment      |    ✅    |
 
 <p align="center"><strong>© 2026 Srimani. All rights reserved.</strong></p>

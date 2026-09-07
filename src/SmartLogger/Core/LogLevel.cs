@@ -5,6 +5,11 @@
 /// </summary>
 public enum LogLevel
 {
+    /// <summary>
+    /// Disables logging - no messages will be logged at this level.
+    /// </summary>
+    NONE = 0,
+
     /// <summary> 
     /// Detailed information for debugging and development. 
     /// </summary>
@@ -29,7 +34,6 @@ public enum LogLevel
     /// Critical failures requiring immediate attention. 
     /// </summary>
     FATAL = 5
-
 }
 
 /// <summary>

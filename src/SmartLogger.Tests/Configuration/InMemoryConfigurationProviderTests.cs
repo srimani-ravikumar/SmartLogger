@@ -3,7 +3,7 @@ using SmartLogger.Core;
 using System;
 using System.Collections.Generic;
 
-namespace SmartLogger.Tests.Configuration
+namespace SmartLogger.Tests.Configurations
 {
     [TestFixture]
     public class InMemoryConfigurationProviderTests

@@ -1,7 +1,5 @@
 using SmartLogger.Configurations;
 using SmartLogger.Core;
-using System;
-using System.Collections.Generic;
 
 namespace SmartLogger.Tests.Configurations
 {
@@ -193,8 +191,8 @@ namespace SmartLogger.Tests.Configurations
             var configuration = CreateValidConfiguration();
             configuration.Appenders.Add(new AppenderConfiguration
             {
-                Destination = new DestinationConfiguration 
-                { 
+                Destination = new DestinationConfiguration
+                {
                     Type = LogOutputDestination.FileSystem,
                     File = new FileConfiguration { FileName = "logs/app", Extension = "log" }
                 }
@@ -231,11 +229,11 @@ namespace SmartLogger.Tests.Configurations
             configuration.Appenders[0].Destination = new DestinationConfiguration
             {
                 Type = LogOutputDestination.FileSystem,
-                File = new FileConfiguration 
-                { 
+                File = new FileConfiguration
+                {
                     Directory = "Logs",
-                    FileName = "app", 
-                    Extension = "log" 
+                    FileName = "app",
+                    Extension = "log"
                 }
             };
             var provider = new InMemoryConfigurationProvider(configuration);
@@ -319,11 +317,11 @@ namespace SmartLogger.Tests.Configurations
             configuration.Appenders[0].Destination = new DestinationConfiguration
             {
                 Type = LogOutputDestination.FileSystem,
-                File = new FileConfiguration 
-                { 
+                File = new FileConfiguration
+                {
                     Directory = "Logs",
-                    FileName = "app", 
-                    Extension = "log" 
+                    FileName = "app",
+                    Extension = "log"
                 }
             };
             var provider = new InMemoryConfigurationProvider(configuration);
@@ -358,16 +356,16 @@ namespace SmartLogger.Tests.Configurations
             // Add different destination types to avoid duplicate destination validation error
             configuration.Appenders.Add(new AppenderConfiguration
             {
-                Destination = new DestinationConfiguration 
-                { 
+                Destination = new DestinationConfiguration
+                {
                     Type = LogOutputDestination.FileSystem,
                     File = new FileConfiguration { Directory = "Logs", FileName = "app1", Extension = "log" }
                 }
             });
             configuration.Appenders.Add(new AppenderConfiguration
             {
-                Destination = new DestinationConfiguration 
-                { 
+                Destination = new DestinationConfiguration
+                {
                     Type = LogOutputDestination.DatabaseSystem
                 }
             });

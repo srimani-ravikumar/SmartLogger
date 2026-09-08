@@ -1,7 +1,5 @@
-﻿using NUnit.Framework;
+﻿using SmartLogger.Configurations;
 using SmartLogger.Core;
-using System;
-using System.IO;
 
 namespace SmartLogger.Tests.Configurations
 {

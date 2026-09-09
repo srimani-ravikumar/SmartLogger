@@ -30,6 +30,10 @@ jobs:
         run: dotnet restore src/SmartLogger/SmartLogger.csproj
         # Restores all NuGet dependencies
 
+      - name: Restore Tests
+        run: dotnet restore src/SmartLogger.Tests/SmartLogger.Tests.csproj
+        # Restores all NuGet dependencies for the test project
+
       - name: Build
         run: dotnet build src/SmartLogger/SmartLogger.csproj --configuration Release --no-restore
         # Builds the project in Release mode (no restore since already done)

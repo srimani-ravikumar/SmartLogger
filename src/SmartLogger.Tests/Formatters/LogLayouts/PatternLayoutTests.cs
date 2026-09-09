@@ -1,5 +1,6 @@
 ﻿using Moq;
 using SmartLogger.Core;
+using SmartLogger.Formatters.LogLayouts;
 using SmartLogger.Formatters.Tokens;
 
 namespace SmartLogger.Tests.Formatters.LogLayouts;

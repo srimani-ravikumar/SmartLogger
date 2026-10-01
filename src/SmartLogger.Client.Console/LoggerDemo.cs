@@ -6,14 +6,18 @@ internal class LoggerDemo
     public static int Main(string[] args)
     {
         Console.WriteLine("=== SmartLogger Framework Demo ===\n");
+        Console.WriteLine("Each demo below mirrors a recipe from docs/client/configuration-guide.md\n");
 
-        DemoProductionBootstrap();
-        //DemoStructuredLogging();
-        //DemoAsyncCorrelationFlow().Wait();
-        //DemoCustomPatternLayout();
-        //DemoMultiAppender();
-        //DemoHighThroughputLogging();
-        //DemoFailureScenario();
+        DemoLocalDevelopmentConsole();
+        //DemoMinimalZeroConfig();
+        //DemoProductionFileLogging();
+        //DemoConsolePlusFile();
+        //DemoRemoteLogAggregator();
+        //DemoHighThroughputAsync();
+        //DemoLongRunningCompliance();
+        //DemoPerComponentOverrides();
+        //DemoCustomConsolePattern();
+        //DemoJsonTrimmedFields();
 
         Console.WriteLine("\n=== Demo Completed ===");
         Console.ReadKey();
@@ -22,111 +26,376 @@ internal class LoggerDemo
     }
 
     // --------------------------------------------------------
-
-    private static void DemoProductionBootstrap()
-    {
-        Console.WriteLine("1. Production Bootstrap Demo");
-        Console.WriteLine("-----------------------------------");
-
-        var provider = new JsonConfigurationProvider(
-            Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
-            enableAutoReload: true);
-
-        //var provider = new XmlConfigurationProvider(
-        //    Path.Combine(AppContext.BaseDirectory, "xmlconfigurationfile.xml"),
-        //    enableAutoReload: true);
-
-        LoggerManager.Initialize(provider);
-
-        var logger = LoggerManager.GetLogger(typeof(LoggerDemo));
-
-        logger.Info("Application bootstrap started");
-        logger.Debug("Loading configuration files...");
-        logger.Debug("Initializing dependency graph...");
-        logger.Info("All services initialized successfully");
-
-        logger.Warning("Cache service running in degraded mode");
-        logger.Info("Application started successfully and ready to accept traffic");
-    }
-
+    // Use Case: Local Development - Console, Verbose
     // --------------------------------------------------------
 
-    private static void DemoStructuredLogging()
+    private static void DemoLocalDevelopmentConsole()
     {
-        Console.WriteLine("\n2. Structured Logging Demo");
+        Console.WriteLine("1. Local Development - Console, Verbose");
         Console.WriteLine("-----------------------------------");
 
-        var provider = new JsonConfigurationProvider(
-            Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
-            enableAutoReload: false);
-
-        LoggerManager.Initialize(provider);
-
-        var logger = LoggerManager.GetLogger("StructuredDemo");
-
-        logger.Info("Incoming request received");
-        logger.Debug("Validating user credentials...");
-        logger.Info("User 'john_doe' authenticated successfully");
-
-        logger.Warning("Suspicious login detected from new device");
-        logger.Info("User preferences loaded");
-
-        logger.Debug("Fetching dashboard data...");
-        logger.Info("Dashboard rendered successfully");
-
-        logger.Error("Failed to fetch analytics module due to timeout");
-    }
-
-    // --------------------------------------------------------
-
-    private static async Task DemoAsyncCorrelationFlow()
-    {
-        Console.WriteLine("\n3. Async Correlation Flow Demo");
-        Console.WriteLine("-----------------------------------");
-
-        var provider = new JsonConfigurationProvider(
-            Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
-            enableAutoReload: false);
-
-        LoggerManager.Initialize(provider);
-
-        var logger = LoggerManager.GetLogger("AsyncFlow");
-
-        using (LogContext.BeginCorrelationScope("REQ-789"))
+        var config = new LogConfigurationHolder
         {
-            logger.Info("Request started");
-            logger.Debug("Parsing request headers...");
-            logger.Debug("Validating authentication token...");
+            RootLogLevel = LogLevel.DEBUG,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.Console
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.PlainText,
+                        LayoutType = LogMessageLayoutType.Detailed
+                    }
+                }
+            }
+        };
 
-            await Task.Delay(100);
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
 
-            await ProcessAsync(logger);
+        var logger = LoggerManager.GetLogger("LocalDev");
 
-            logger.Info("Aggregating response...");
-            logger.Info("Request completed successfully");
-        }
-    }
-
-    private static async Task ProcessAsync(ISmartLogger logger)
-    {
-        logger.Debug("Entering business layer...");
-        await Task.Delay(50);
-
-        logger.Info("Processing order...");
-        logger.Debug("Checking inventory...");
-        logger.Info("Inventory confirmed");
-
-        logger.Debug("Calling payment service...");
-        await Task.Delay(50);
-
-        logger.Info("Payment processed successfully");
+        logger.Debug("Loading configuration files...");
+        logger.Info("Application bootstrap started");
+        logger.Warning("Cache service running in degraded mode");
+        logger.Error("Simulated startup error for visibility");
     }
 
     // --------------------------------------------------------
+    // Use Case: Minimal / Zero Config
+    // --------------------------------------------------------
 
-    private static void DemoCustomPatternLayout()
+    private static void DemoMinimalZeroConfig()
     {
-        Console.WriteLine("\n4. Custom Pattern Layout Demo");
+        Console.WriteLine("\n2. Minimal / Zero Config");
+        Console.WriteLine("-----------------------------------");
+
+        // No appenders configured -> SmartLogger auto-enables a default Console Appender.
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("MinimalConfig");
+
+        logger.Info("Running with zero appenders configured");
+        logger.Warning("Still logs to console via the default appender");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Production - File Logging, JSON, Rolling
+    // --------------------------------------------------------
+
+    private static void DemoProductionFileLogging()
+    {
+        Console.WriteLine("\n3. Production - File Logging, JSON, Rolling");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.FileSystem,
+                        File = new FileConfiguration
+                        {
+                            Directory = "Logs",
+                            FileName = "Application",
+                            Extension = "log",
+                            Rolling = new FileRollingConfiguration { Strategy = RollingStrategyType.Daily },
+                            Archive = new ArchiveConfiguration { Enabled = true, Compress = true },
+                            Retention = new RetentionConfiguration { RetentionDays = 30 }
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("ProductionFileLogging");
+
+        logger.Info("Order created successfully");
+        logger.Warning("Inventory running low");
+        logger.Error("Payment gateway timeout");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Console + File (Common Combo)
+    // --------------------------------------------------------
+
+    private static void DemoConsolePlusFile()
+    {
+        Console.WriteLine("\n4. Console + File (Common Combo)");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.DEBUG,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.Console
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.PlainText,
+                        LayoutType = LogMessageLayoutType.Simple
+                    }
+                },
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.FileSystem,
+                        File = new FileConfiguration
+                        {
+                            Directory = "Logs",
+                            FileName = "Application",
+                            Extension = "log",
+                            Rolling = new FileRollingConfiguration { Strategy = RollingStrategyType.Daily },
+                            Archive = new ArchiveConfiguration { Enabled = true, Compress = true }
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("ConsolePlusFile");
+
+        logger.Info("Application event triggered");
+        logger.Debug("Writing logs to multiple destinations...");
+        logger.Warning("Disk usage nearing threshold");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Remote Log Aggregator (Centralized Sink)
+    // --------------------------------------------------------
+
+    private static void DemoRemoteLogAggregator()
+    {
+        Console.WriteLine("\n5. Remote Log Aggregator (Centralized Sink)");
+        Console.WriteLine("-----------------------------------");
+
+        // Mirrors the configuration-guide.md recipe. The LogAggregator destination
+        // is not yet wired into LoggerFactory, so this method only builds the
+        // configuration shape for reference - see SmartLogger.Aggregator.Demo
+        // to try the sink end-to-end via HttpLogAggregatorSink directly.
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.LogAggregator,
+                        LogAggregator = new LogAggregatorConfiguration
+                        {
+                            UseDefault = true,
+                            Endpoint = new Uri("http://localhost:5290/api/logs")
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        Console.WriteLine($"Configured endpoint: {config.Appenders[0].Destination.LogAggregator!.Endpoint}");
+        Console.WriteLine("Note: not initialized - runtime wiring for this destination is pending.");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: High-Throughput APIs / Workers
+    // --------------------------------------------------------
+
+    private static void DemoHighThroughputAsync()
+    {
+        Console.WriteLine("\n6. High-Throughput APIs / Workers (Stress Test)");
+        Console.WriteLine("--------------------------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            EnableAsyncLoggingProcess = true,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.FileSystem,
+                        File = new FileConfiguration
+                        {
+                            Directory = "Logs",
+                            FileName = "Application",
+                            Extension = "json",
+                            Rolling = new FileRollingConfiguration
+                            {
+                                Strategy = RollingStrategyType.Size,
+                                MaxFileSizeMB = 10
+                            }
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("HighThroughput");
+
+        int threadCount = Environment.ProcessorCount;
+        int logsPerThread = 1000;
+
+        Console.WriteLine($"Running with {threadCount} threads, {logsPerThread} logs per thread...\n");
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        Parallel.For(0, threadCount, threadId =>
+        {
+            using (LogContext.BeginCorrelationScope($"PERF-{threadId}"))
+            {
+                for (int i = 0; i < logsPerThread; i++)
+                {
+                    logger.Debug($"[T{threadId}] Processing item {i}");
+
+                    if (i % 100 == 0)
+                        logger.Info($"[T{threadId}] Checkpoint at {i}");
+
+                    if (i % 250 == 0)
+                        logger.Warning($"[T{threadId}] High load detected at {i}");
+
+                    if (i % 400 == 0)
+                    {
+                        try
+                        {
+                            throw new Exception("Simulated processing failure");
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.Error($"[T{threadId}] Error: {ex.Message}");
+                        }
+                    }
+                }
+            }
+        });
+
+        sw.Stop();
+
+        Console.WriteLine("\n--- Performance Summary ---");
+        Console.WriteLine($"Total logs: {threadCount * logsPerThread}");
+        Console.WriteLine($"Elapsed time: {sw.ElapsedMilliseconds} ms");
+        Console.WriteLine($"Logs/sec: {(threadCount * logsPerThread) / sw.Elapsed.TotalSeconds:F2}");
+
+        logger.Info("High throughput logging test completed");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Long-Running / Compliance Services
+    // --------------------------------------------------------
+
+    private static void DemoLongRunningCompliance()
+    {
+        Console.WriteLine("\n7. Long-Running / Compliance Services");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.FileSystem,
+                        File = new FileConfiguration
+                        {
+                            Directory = "Logs",
+                            FileName = "Application",
+                            Archive = new ArchiveConfiguration { Enabled = true, Compress = true },
+                            Retention = new RetentionConfiguration { RetentionDays = 90 }
+                        }
+                    }
+                }
+            }
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("ComplianceService");
+
+        logger.Info("Scheduled job started");
+        logger.Info("Audit record written with 90 day retention");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Per-Component Log Levels (Overrides)
+    // --------------------------------------------------------
+
+    private static void DemoPerComponentOverrides()
+    {
+        Console.WriteLine("\n8. Per-Component Log Levels (Overrides)");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            LoggerOverrides = new List<LoggerOverrideConfiguration>
+            {
+                new LoggerOverrideConfiguration { LoggerName = "SmartLogger.PaymentService", LogLevel = LogLevel.DEBUG },
+                new LoggerOverrideConfiguration { LoggerName = "SmartLogger.Database", LogLevel = LogLevel.ERROR }
+            }
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var paymentLogger = LoggerManager.GetLogger("SmartLogger.PaymentService");
+        var databaseLogger = LoggerManager.GetLogger("SmartLogger.Database");
+
+        paymentLogger.Debug("Verbose payment diagnostics (visible due to override)");
+        databaseLogger.Warning("Suppressed - Database override only allows ERROR and above");
+        databaseLogger.Error("Connection pool exhausted");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Custom Console Pattern
+    // --------------------------------------------------------
+
+    private static void DemoCustomConsolePattern()
+    {
+        Console.WriteLine("\n9. Custom Console Pattern");
         Console.WriteLine("-----------------------------------");
 
         var config = new LogConfigurationHolder
@@ -154,25 +423,25 @@ internal class LoggerDemo
 
         var logger = LoggerManager.GetLogger("CustomLayout");
 
-        using (LogContext.BeginCorrelationScope("CTX-999"))
+        using (LogContext.BeginCorrelationScope("REQ-1023"))
         {
-            logger.Info("Custom layout initialized");
-            logger.Debug("Thread-specific execution started");
+            logger.Info("Payment processed successfully");
             logger.Warning("Minor inconsistency detected");
-            logger.Error("Simulated error in custom layout pipeline");
         }
     }
 
     // --------------------------------------------------------
+    // Use Case: JSON With Trimmed / Renamed Fields
+    // --------------------------------------------------------
 
-    private static void DemoMultiAppender()
+    private static void DemoJsonTrimmedFields()
     {
-        Console.WriteLine("\n5. Multi-Appender Demo");
+        Console.WriteLine("\n10. JSON With Trimmed / Renamed Fields");
         Console.WriteLine("-----------------------------------");
 
         var config = new LogConfigurationHolder
         {
-            RootLogLevel = LogLevel.DEBUG,
+            RootLogLevel = LogLevel.INFO,
             Appenders = new List<AppenderConfiguration>
             {
                 new AppenderConfiguration
@@ -180,17 +449,16 @@ internal class LoggerDemo
                     Destination = new DestinationConfiguration
                     {
                         Type = LogOutputDestination.Console
-                    }
-                },
-                new AppenderConfiguration
-                {
-                    Destination = new DestinationConfiguration
+                    },
+                    Formatter = new FormatterConfiguration
                     {
-                        Type = LogOutputDestination.FileSystem,
-                        File = new FileConfiguration
+                        OutputFormat = LogOutputFormat.Json,
+                        IncludedJsonFields = new List<string> { "timestamp", "level", "message" },
+                        JsonFieldMappings = new List<JsonFieldMappingConfiguration>
                         {
-                            FileName = "logs/app",
-                            Extension = "log"
+                            new JsonFieldMappingConfiguration { SourceField = "timestamp", TargetField = "@timestamp" },
+                            new JsonFieldMappingConfiguration { SourceField = "level", TargetField = "severity" },
+                            new JsonFieldMappingConfiguration { SourceField = "message", TargetField = "msg" }
                         }
                     }
                 }
@@ -199,148 +467,8 @@ internal class LoggerDemo
 
         LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
 
-        var logger = LoggerManager.GetLogger("MultiAppender");
+        var logger = LoggerManager.GetLogger("TrimmedJsonFields");
 
-        logger.Info("Application event triggered");
-        logger.Debug("Writing logs to multiple destinations...");
-        logger.Info("User session created");
-        logger.Warning("Disk usage nearing threshold");
-        logger.Error("Simulated file write delay detected");
-    }
-
-    // --------------------------------------------------------
-
-    private static void DemoHighThroughputLogging()
-    {
-        Console.WriteLine("\n6. High Throughput Logging Demo (Stress Test)");
-        Console.WriteLine("--------------------------------------------------");
-
-        // In-memory config with async logging + file + console
-        var config = new LogConfigurationHolder
-        {
-            RootLogLevel = LogLevel.DEBUG,
-            EnableAsyncLoggingProcess = true,
-            Appenders = new List<AppenderConfiguration>
-        {
-            new AppenderConfiguration
-            {
-                Destination = new DestinationConfiguration
-                {
-                    Type = LogOutputDestination.Console
-                },
-                AppenderLogLevel = LogLevel.INFO
-            },
-            new AppenderConfiguration
-            {
-                Destination = new DestinationConfiguration
-                {
-                    Type = LogOutputDestination.FileSystem,
-                    File = new FileConfiguration
-                    {
-                        FileName = "logs/perf",
-                        Extension = "log",
-                        Naming = new FileNamingConfiguration
-                        {
-                            Strategy = FileNamingStrategyType.Date,
-                            DateFormat = "yyyy-MM-dd"
-                        },
-                        Rolling = new FileRollingConfiguration
-                        {
-                            Strategy = RollingStrategyType.Size,
-                            MaxFileSizeMB = 10 // force rolling quickly
-                        }
-                    }
-                },
-                AppenderLogLevel = LogLevel.DEBUG
-            }
-        }
-        };
-
-        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
-
-        var logger = LoggerManager.GetLogger("PerformanceTest");
-
-        int threadCount = Environment.ProcessorCount;
-        int logsPerThread = 1000;
-
-        Console.WriteLine($"Running with {threadCount} threads, {logsPerThread} logs per thread...\n");
-
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-
-        Parallel.For(0, threadCount, threadId =>
-        {
-            using (LogContext.BeginCorrelationScope($"PERF-{threadId}"))
-            {
-                for (int i = 0; i < logsPerThread; i++)
-                {
-                    // Mix of levels
-                    logger.Debug($"[T{threadId}] Processing item {i}");
-
-                    if (i % 100 == 0)
-                    {
-                        logger.Info($"[T{threadId}] Checkpoint at {i}");
-                    }
-
-                    if (i % 250 == 0)
-                    {
-                        logger.Warning($"[T{threadId}] High load detected at {i}");
-                    }
-
-                    // Simulate occasional failure
-                    if (i % 400 == 0)
-                    {
-                        try
-                        {
-                            throw new Exception("Simulated processing failure");
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.Error($"[T{threadId}] Error: {ex.Message}");
-                        }
-                    }
-                }
-            }
-        });
-
-        sw.Stop();
-
-        Console.WriteLine("\n--- Performance Summary ---");
-        Console.WriteLine($"Total logs: {threadCount * logsPerThread}");
-        Console.WriteLine($"Elapsed time: {sw.ElapsedMilliseconds} ms");
-        Console.WriteLine($"Logs/sec: {(threadCount * logsPerThread) / (sw.Elapsed.TotalSeconds):F2}");
-
-        logger.Info("High throughput logging test completed");
-    }
-
-    // --------------------------------------------------------
-
-    private static void DemoFailureScenario()
-    {
-        Console.WriteLine("\n7. Failure Scenario Demo");
-        Console.WriteLine("-----------------------------------");
-
-        var provider = new JsonConfigurationProvider(
-            Path.Combine(AppContext.BaseDirectory, "smartlogger.json"),
-            enableAutoReload: false);
-
-        LoggerManager.Initialize(provider);
-
-        var logger = LoggerManager.GetLogger("FailureDemo");
-
-        logger.Info("Initiating payment transaction...");
-        logger.Debug("Validating card details...");
-        logger.Info("Connecting to payment gateway...");
-
-        try
-        {
-            throw new Exception("Payment gateway timeout");
-        }
-        catch (Exception ex)
-        {
-            logger.Error($"Transaction failed: {ex.Message}");
-            logger.Warning("Retry mechanism will be triggered");
-        }
-
-        logger.Info("Transaction marked as failed in system");
+        logger.Info("Order processed successfully.");
     }
 }

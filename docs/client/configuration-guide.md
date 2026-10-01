@@ -1,13 +1,6 @@
-﻿# SmartLogger v4.0.2
+﻿# SmartLogger
 
 # Configuration Guide
-
-## Document Information
-
-| Project | Version | Date | Author | Status | Description |
-|---------|---------|------------|---------|-------------|-------------|
-| SmartLogger | 1.0.0 | 2026-10-01 | Srimani | Final | Pick the config that matches your use case, copy it, done. Reference tables at the bottom for everything else. |
-
 # How to use this guide
 
 SmartLogger follows **Convention over Configuration** - you only specify what differs from the sensible defaults.

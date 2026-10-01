@@ -30,7 +30,7 @@ Layout (Pattern + Tokens)
    ↓
 Formatter (PlainText / JSON / etc.)
    ↓
-Appender (Console / File / etc.)
+Appender (Console / File / LogAggregator)
 ```
 
 This design ensures:
@@ -44,13 +44,13 @@ This design ensures:
 ## Key Features
 
 * Priority-based log level management and filtering
-* Multiple output formats (PlainText, JSON, extensible)
-* Multiple appenders (Console, FileSystem, extensible)
+* Multiple appenders (Console, FileSystem, LogAggregator)
+* Multiple output formats (PlainText, JSON, LogAggregator)
 * Offers both Synchronous and asynchronous logging pipeline
-* Runtime configuration reload with zero downtime
-* Correlation context for distributed systems
-* Overload protection
 * Configurable file rolling and simple & intuitive configurations
+* Correlation context for distributed systems
+* Runtime configuration reload with zero downtime
+* Overload protection
 
 ---
 
@@ -66,7 +66,7 @@ Install-Package SmartLogger
 
 ### 2️. Configure & Initialize SmartLogger
 
-#### Option A – JSON Configuration *(Recommended)*
+#### Option A - JSON Configuration *(Recommended)*
 
 ```csharp
 var provider = new JsonConfigurationProvider(
@@ -78,7 +78,7 @@ LoggerManager.Initialize(provider);
 
 This approach is recommended for most applications as it supports **configuration hot reload** without restarting the application.
 
-#### Option B – In-Memory Configuration
+#### Option B - In-Memory Configuration
 
 ```csharp
 var configuration = new LogConfigurationHolder
@@ -276,13 +276,10 @@ For a complete list of supported configuration options, examples, and best pract
 
 ## Ideal Use Cases
 
-* Learning system design
-* Monolith Web APIs
-* Background workers
-* High-throughput systems
+* Monolith Systems
+* Distributed sytems via LogAggregator appender
+* High-throughput systems via async logging pipeline
+* Windows Services, Console Apps, Web APIs, and more
 
 ---
-
-<center><b>© 2026 Srimani. All rights reserved.</b></center>
-</br>
-<center><i>SmartLogger — Lightweight Logging for High-Performance .NET Applications</i></center>
+<p align="center"><strong>© 2026 Srimani. All rights reserved.</strong></p>

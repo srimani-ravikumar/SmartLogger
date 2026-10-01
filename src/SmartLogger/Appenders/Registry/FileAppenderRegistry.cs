@@ -3,7 +3,7 @@ using SmartLogger.Appenders.FileRolling;
 using SmartLogger.Core;
 using System.Collections.Concurrent;
 
-namespace SmartLogger.Appenders;
+namespace SmartLogger.Appenders.Registry;
 
 /// <summary>
 /// Registry responsible for managing and reusing <see cref="ILogAppender"/> instances for file-based logging.
@@ -42,6 +42,7 @@ internal static class FileAppenderRegistry
     /// <param name="logLevel">Minimum log level threshold.</param>
     /// <param name="formatter">Formatter used for message rendering.</param>
     /// <param name="rollingStrategy">Rolling strategy for file rotation.</param>
+    /// <param name="namingStrategy">File naming strategy used for generating file names.</param>
     /// <param name="asyncEnabled">Indicates whether asynchronous wrapping should be applied.</param>
     /// <returns>A cached or newly created <see cref="ILogAppender"/> instance.</returns>
     /// <remarks>

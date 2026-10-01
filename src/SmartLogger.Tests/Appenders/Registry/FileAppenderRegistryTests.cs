@@ -2,10 +2,11 @@
 using SmartLogger.Appenders;
 using SmartLogger.Appenders.FileNaming;
 using SmartLogger.Appenders.FileRolling;
+using SmartLogger.Appenders.Registry;
 using SmartLogger.Core;
 using System.Collections.Concurrent;
 
-namespace SmartLogger.Tests.Appenders;
+namespace SmartLogger.Tests.Appenders.Registry;
 
 [TestFixture]
 public class FileAppenderRegistryTests

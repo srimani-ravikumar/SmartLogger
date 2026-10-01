@@ -589,7 +589,7 @@ namespace SmartLogger.Tests.Core
             Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.Unknown), Is.True);
             Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.Console), Is.True);
             Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.FileSystem), Is.True);
-            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.DatabaseSystem), Is.True);
+            Assert.That(Enum.IsDefined(typeof(LogOutputDestination), LogOutputDestination.LogAggregator), Is.True);
         }
 
         [Test]

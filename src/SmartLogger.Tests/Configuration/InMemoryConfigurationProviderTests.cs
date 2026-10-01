@@ -245,20 +245,21 @@ namespace SmartLogger.Tests.Configurations
             Assert.That(loaded.Appenders[0].Destination.Type, Is.EqualTo(LogOutputDestination.FileSystem));
         }
 
-        [Test]
-        public void Load_WithDatabaseAppender_ShouldSucceed()
-        {
-            // Arrange
-            var configuration = CreateValidConfiguration();
-            configuration.Appenders[0].Destination.Type = LogOutputDestination.DatabaseSystem;
-            var provider = new InMemoryConfigurationProvider(configuration);
+        // [Ignore("Database appender tests has been removed without replacement")]
+        // [Test]
+        // public void Load_WithDatabaseAppender_ShouldSucceed()
+        // {
+        //     // Arrange
+        //     var configuration = CreateValidConfiguration();
+        //     configuration.Appenders[0].Destination.Type = LogOutputDestination.DatabaseSystem;
+        //     var provider = new InMemoryConfigurationProvider(configuration);
 
-            // Act
-            var loaded = provider.Load();
+        //     // Act
+        //     var loaded = provider.Load();
 
-            // Assert
-            Assert.That(loaded.Appenders[0].Destination.Type, Is.EqualTo(LogOutputDestination.DatabaseSystem));
-        }
+        //     // Assert
+        //     Assert.That(loaded.Appenders[0].Destination.Type, Is.EqualTo(LogOutputDestination.DatabaseSystem));
+        // }
 
         [TestCase(LogLevel.DEBUG)]
         [TestCase(LogLevel.INFO)]
@@ -366,7 +367,7 @@ namespace SmartLogger.Tests.Configurations
             {
                 Destination = new DestinationConfiguration
                 {
-                    Type = LogOutputDestination.DatabaseSystem
+                    Type = LogOutputDestination.LogAggregator
                 }
             });
             var provider = new InMemoryConfigurationProvider(configuration);

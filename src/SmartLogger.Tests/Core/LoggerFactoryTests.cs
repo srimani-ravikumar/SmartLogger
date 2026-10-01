@@ -1,5 +1,6 @@
 using Moq;
 using SmartLogger.Appenders;
+using SmartLogger.Appenders.Registry;
 using SmartLogger.Core;
 using System.Collections.Concurrent;
 using System.Reflection;

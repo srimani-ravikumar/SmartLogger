@@ -1,11 +1,14 @@
 ﻿using SmartLogger.Appenders;
+using SmartLogger.Appenders.Aggregation;
 using SmartLogger.Appenders.FileNaming;
 using SmartLogger.Appenders.FileRolling;
+using SmartLogger.Appenders.Registry;
 using SmartLogger.Formatters;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 
 namespace SmartLogger.Core;
 
@@ -189,9 +192,42 @@ internal class LoggerFactory
                         globalConfig.EnableAsyncLoggingProcess);
                 }
 
+            case LogOutputDestination.LogAggregator:
+                {
+                    ILogAppender appender =
+                        new LogAggregatorAppender(CreateAggregatorSink(config.Destination.LogAggregator));
+
+                    appender.SetLogLevel(appenderLogLevel);
+                    appender.SetFormatter(FormatterFactory.Create(config));
+
+                    return globalConfig.EnableAsyncLoggingProcess
+                        ? new AsyncAppenderWrapper(appender)
+                        : appender;
+                }
+
             default:
                 throw new NotSupportedException(
                     $"Unsupported destination: {config.Destination.Type}");
         }
+    }
+
+    /// <summary>
+    /// Resolves the <see cref="ILogAggregatorSink"/> to use for a LogAggregator destination.
+    /// </summary>
+    private static ILogAggregatorSink CreateAggregatorSink(LogAggregatorConfiguration aggregatorConfig)
+    {
+        if (aggregatorConfig is null)
+            throw new InvalidOperationException(
+                "LogAggregator destination requires 'LogAggregator' configuration.");
+
+        if (!aggregatorConfig.UseDefault)
+            throw new NotSupportedException(
+                "Custom ILogAggregatorSink implementations are not yet supported through configuration. Set UseDefault to true.");
+
+        if (aggregatorConfig.Endpoint is null)
+            throw new InvalidOperationException(
+                "LogAggregator destination requires a valid 'Endpoint' when UseDefault is true.");
+
+        return new HttpLogAggregatorSink(new HttpClient(), aggregatorConfig.Endpoint);
     }
 }

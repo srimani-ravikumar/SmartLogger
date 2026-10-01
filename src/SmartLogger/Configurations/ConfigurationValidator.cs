@@ -37,6 +37,8 @@ internal static class ConfigurationValidator
             ValidateFileConfiguration(appender);
 
             ValidateCustomLayout(appender);
+
+            ValidateAggregatorFormatter(appender);
         }
     }
 
@@ -147,5 +149,33 @@ internal static class ConfigurationValidator
 
             "Example:\n" +
             "\"Pattern\": \"[%LEVEL] %MESSAGE\"");
+    }
+
+    /// <summary>
+    /// Validates that LogAggregator appenders are configured with the JSON formatter.
+    /// </summary>
+    private static void ValidateAggregatorFormatter(
+        AppenderConfiguration appender)
+    {
+        if (appender.Destination.Type != LogOutputDestination.LogAggregator)
+            return;
+
+        if (appender.Formatter.OutputFormat == LogOutputFormat.Json)
+            return;
+
+        throw new InvalidOperationException(
+            $"LogAggregator appender requires the Json output format, but '{appender.Formatter.OutputFormat}' was configured.\n\n" +
+
+            "Reason:\n" +
+            "Aggregator sinks consume structured payloads, so only JSON is supported.\n\n" +
+
+            "Suggested fix:\n" +
+            "Set the appender's Formatter.OutputFormat to Json.\n\n" +
+
+            "Example:\n" +
+            "\"Formatter\":\n" +
+            "{\n" +
+            "  \"OutputFormat\": \"Json\"\n" +
+            "}");
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SmartLogger.Core;
 
@@ -151,10 +152,34 @@ public sealed class DestinationConfiguration
     /// </summary>
     public FileConfiguration? File { get; set; }
 
-    /// <summary>
-    /// Database-specific configuration (future extension).
+     /// <summary>
+    /// Log aggregation configuration.
+    /// Required when Type = LogAggregator.
     /// </summary>
-    //public object? Database { get; set; } // TODO: Strong type later
+    public LogAggregatorConfiguration? LogAggregator { get; set; }
+}
+
+/// <summary>
+/// Configuration for the log aggregator sink.
+/// </summary>
+public sealed class LogAggregatorConfiguration
+{
+    /// <summary>
+    /// Gets or sets whether the built-in HTTP log aggregator
+    /// implementation should be used.
+    ///
+    /// When false, the application is expected to provide its
+    /// own ILogAggregatorSink implementation.
+    /// </summary>
+    public bool UseDefault { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the HTTP endpoint used by the default
+    /// log aggregator implementation.
+    ///
+    /// Required when UseDefault is true.
+    /// </summary>
+    public Uri? Endpoint { get; set; }
 }
 
 #endregion
@@ -379,7 +404,6 @@ public enum RollingStrategyType
 
 #region Formatter Configuration
 
-
 /// <summary>
 /// Defines how log messages are formatted before being written.
 /// </summary>
@@ -471,9 +495,9 @@ public enum LogOutputDestination
     FileSystem = 2,
 
     /// <summary>
-    /// Writes log output to a database system.
+    /// Writes log output to the log aggregator sink.
     /// </summary>
-    DatabaseSystem = 3
+    LogAggregator = 3
 }
 
 /// <summary>

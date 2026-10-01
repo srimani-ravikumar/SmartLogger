@@ -76,7 +76,7 @@ class LogOutputDestination {
     Unknown
     Console
     FileSystem
-    DatabaseSystem
+    LogAggregator
 }
 
 class LogLevel {

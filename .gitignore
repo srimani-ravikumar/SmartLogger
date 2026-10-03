@@ -87,3 +87,6 @@ coverage.cobertura.xml
 # =========================
 *.tmp
 *.temp
+
+rough-sheet.txt
+src/SmartLogger.Client.Console/SmartLogger.Client.Console.csproj

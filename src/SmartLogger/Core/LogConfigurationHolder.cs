@@ -180,6 +180,23 @@ public sealed class LogAggregatorConfiguration
     /// Required when UseDefault is true.
     /// </summary>
     public Uri? Endpoint { get; set; }
+
+    /// <summary>
+    /// Gets or sets the key used to resolve a custom <see cref="Appenders.Aggregation.ILogAggregatorSink"/>
+    /// that was registered in code via <c>LoggerManager.Initialize</c>.
+    ///
+    /// Used when UseDefault is false. Takes precedence over <see cref="SinkTypeName"/>.
+    /// </summary>
+    public string? SinkKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the assembly-qualified type name of a custom
+    /// <see cref="Appenders.Aggregation.ILogAggregatorSink"/> to instantiate via reflection.
+    ///
+    /// The type must expose a public parameterless constructor.
+    /// Used when UseDefault is false and <see cref="SinkKey"/> is not specified.
+    /// </summary>
+    public string? SinkTypeName { get; set; }
 }
 
 #endregion

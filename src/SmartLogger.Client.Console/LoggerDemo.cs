@@ -1,4 +1,5 @@
-﻿using SmartLogger.Configurations;
+﻿using SmartLogger.Appenders.Aggregation;
+using SmartLogger.Configurations;
 using SmartLogger.Core;
 
 internal class LoggerDemo
@@ -8,11 +9,13 @@ internal class LoggerDemo
         Console.WriteLine("=== SmartLogger Framework Demo ===\n");
         Console.WriteLine("Each demo below mirrors a recipe from docs/client/configuration-guide.md\n");
 
-        DemoLocalDevelopmentConsole();
+        //DemoLocalDevelopmentConsole();
         //DemoMinimalZeroConfig();
         //DemoProductionFileLogging();
         //DemoConsolePlusFile();
-        //DemoRemoteLogAggregator();
+        //DemoRemoteLogAggregatorUseDefault(); TODO: enfore string config validation before launching
+        //DemoRemoteLogAggregatorCustomSinkViaCode();
+        DemoRemoteLogAggregatorCustomSinkViaTypeName();
         //DemoHighThroughputAsync();
         //DemoLongRunningCompliance();
         //DemoPerComponentOverrides();
@@ -191,18 +194,14 @@ internal class LoggerDemo
     }
 
     // --------------------------------------------------------
-    // Use Case: Remote Log Aggregator (Centralized Sink)
+    // Use Case: Remote Log Aggregator - useDefault: true (built-in HttpLogAggregatorSink)
     // --------------------------------------------------------
 
-    private static void DemoRemoteLogAggregator()
+    private static void DemoRemoteLogAggregatorUseDefault()
     {
-        Console.WriteLine("\n5. Remote Log Aggregator (Centralized Sink)");
+        Console.WriteLine("\n5a. Remote Log Aggregator - useDefault: true");
         Console.WriteLine("-----------------------------------");
 
-        // Mirrors the configuration-guide.md recipe. The LogAggregator destination
-        // is not yet wired into LoggerFactory, so this method only builds the
-        // configuration shape for reference - see SmartLogger.Aggregator.Demo
-        // to try the sink end-to-end via HttpLogAggregatorSink directly.
         var config = new LogConfigurationHolder
         {
             RootLogLevel = LogLevel.INFO,
@@ -227,8 +226,99 @@ internal class LoggerDemo
             }
         };
 
-        Console.WriteLine($"Configured endpoint: {config.Appenders[0].Destination.LogAggregator!.Endpoint}");
-        Console.WriteLine("Note: not initialized - runtime wiring for this destination is pending.");
+        // Requires a listener at the configured endpoint - spin up SmartLogger.Aggregator.Demo first.
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("RemoteAggregatorUseDefault");
+
+        logger.Info("Shipped via the built-in HttpLogAggregatorSink");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Remote Log Aggregator - useDefault: false, custom sink wired in code (sinkKey)
+    // --------------------------------------------------------
+
+    private static void DemoRemoteLogAggregatorCustomSinkViaCode()
+    {
+        Console.WriteLine("\n5b. Remote Log Aggregator - useDefault: false (sinkKey, code wiring)");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.LogAggregator,
+                        LogAggregator = new LogAggregatorConfiguration
+                        {
+                            UseDefault = false,
+                            SinkKey = "console-demo-sink"
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        var customSinks = new Dictionary<string, ILogAggregatorSink>
+        {
+            ["console-demo-sink"] = new ConsoleLogAggregatorSink()
+        };
+
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config), customSinks);
+
+        var logger = LoggerManager.GetLogger("RemoteAggregatorCustomSinkViaCode");
+
+        logger.Info("Shipped via a custom sink instance registered at Initialize() time");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Remote Log Aggregator - useDefault: false, custom sink resolved from config (sinkTypeName)
+    // --------------------------------------------------------
+
+    private static void DemoRemoteLogAggregatorCustomSinkViaTypeName()
+    {
+        Console.WriteLine("\n5c. Remote Log Aggregator - useDefault: false (sinkTypeName, config wiring)");
+        Console.WriteLine("-----------------------------------");
+
+        var config = new LogConfigurationHolder
+        {
+            RootLogLevel = LogLevel.INFO,
+            Appenders = new List<AppenderConfiguration>
+            {
+                new AppenderConfiguration
+                {
+                    Destination = new DestinationConfiguration
+                    {
+                        Type = LogOutputDestination.LogAggregator,
+                        LogAggregator = new LogAggregatorConfiguration
+                        {
+                            UseDefault = false,
+                            // Assembly-qualified name so SmartLogger can Activator.CreateInstance it - no code wiring needed.
+                            SinkTypeName = typeof(ConsoleLogAggregatorSink).AssemblyQualifiedName
+                        }
+                    },
+                    Formatter = new FormatterConfiguration
+                    {
+                        OutputFormat = LogOutputFormat.Json
+                    }
+                }
+            }
+        };
+
+        // No customSinks dictionary - the sink is instantiated purely from configuration.
+        LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+
+        var logger = LoggerManager.GetLogger("RemoteAggregatorCustomSinkViaTypeName");
+
+        logger.Info("Shipped via a custom sink resolved by assembly-qualified type name");
     }
 
     // --------------------------------------------------------
@@ -471,4 +561,17 @@ internal class LoggerDemo
 
         logger.Info("Order processed successfully.");
     }
+}
+
+/// <summary>
+/// Minimal <see cref="ILogAggregatorSink"/> used to demo custom sink wiring (code and config based).
+/// </summary>
+/// <remarks>
+/// Requires a public parameterless constructor so it can also be resolved via <c>SinkTypeName</c> reflection.
+/// </remarks>
+public sealed class ConsoleLogAggregatorSink : ILogAggregatorSink
+{
+    /// <inheritdoc/>
+    public void Send(LogMessage message) =>
+        Console.WriteLine($"[CustomSink] {message.LogLevel} | {message.Message}");
 }

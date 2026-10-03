@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SmartLogger.Core;
 
@@ -32,6 +33,11 @@ public static class LoggerManager
     /// <param name="provider">
     /// The configuration provider responsible for supplying logging settings.
     /// </param>
+    /// <param name="customSinks">
+    /// Optional map of custom <see cref="Appenders.Aggregation.ILogAggregatorSink"/> instances, keyed by the
+    /// value referenced via <c>LogAggregatorConfiguration.SinkKey</c> in configuration. Use this to wire up
+    /// a bespoke sink (e.g. Kafka, gRPC) without implementing a config-based type lookup.
+    /// </param>
     /// <exception cref="ArgumentNullException">
     /// Thrown when <paramref name="provider"/> is null.
     /// </exception>
@@ -39,9 +45,11 @@ public static class LoggerManager
     /// Must be called before any logger is requested.
     /// Subsequent calls will overwrite the existing factory.
     /// </remarks>
-    public static void Initialize(ILogConfigurationProvider provider)
+    public static void Initialize(
+        ILogConfigurationProvider provider,
+        IReadOnlyDictionary<string, Appenders.Aggregation.ILogAggregatorSink>? customSinks = null)
     {
-        _factory = new LoggerFactory(provider ?? throw new ArgumentNullException(nameof(provider)));
+        _factory = new LoggerFactory(provider ?? throw new ArgumentNullException(nameof(provider)), customSinks);
     }
 
     /// <summary>

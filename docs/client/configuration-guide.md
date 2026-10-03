@@ -110,8 +110,41 @@ Simple console for live viewing, structured JSON file for machines (ELK/Splunk/G
 Ships every log event to a centralized HTTP aggregator instead of (or alongside) local files - useful once services are distributed across multiple machines/containers.
 
 * `useDefault: true` uses the built-in `HttpLogAggregatorSink` (just point `endpoint` at your aggregator).
-* `useDefault: false` lets you plug in your own `ILogAggregatorSink` implementation.
+* `useDefault: false` lets you plug in your own `ILogAggregatorSink` implementation, resolved via `sinkKey` or `sinkTypeName` (see below).
 * Spin up `SmartLogger.Aggregator.Demo` locally to try this recipe end-to-end before wiring a real aggregator.
+
+### Custom Sink via `sinkKey` (registered in code)
+
+```json
+{
+  "destination": {
+    "type": "LogAggregator",
+    "logAggregator": { "useDefault": false, "sinkKey": "kafka" }
+  }
+}
+```
+```csharp
+LoggerManager.Initialize(provider, new Dictionary<string, ILogAggregatorSink>
+{
+    ["kafka"] = new KafkaLogAggregatorSink(...)
+});
+```
+Use this when the sink needs dependencies (connections, credentials, DI-resolved services) that can't be expressed in JSON.
+
+### Custom Sink via `sinkTypeName` (config-only, no code wiring)
+
+```json
+{
+  "destination": {
+    "type": "LogAggregator",
+    "logAggregator": {
+      "useDefault": false,
+      "sinkTypeName": "MyCompany.Logging.KafkaLogAggregatorSink, MyCompany.Logging"
+    }
+  }
+}
+```
+The type must implement `ILogAggregatorSink` and expose a public parameterless constructor. No call to `LoggerManager.Initialize` with `customSinks` is needed - SmartLogger instantiates it via reflection. `sinkKey` takes precedence over `sinkTypeName` when both are set.
 
 ## High-Throughput APIs / Workers
 
@@ -284,8 +317,11 @@ Output: `{"@timestamp": "...", "severity": "INFO", "msg": "..."}` - handy when i
 |------------|--------|-------------|----------|
 | useDefault | `bool` | Use the built-in HTTP sink (`HttpLogAggregatorSink`) | true |
 | endpoint | `Uri?` | HTTP endpoint the default sink posts logs to | Required when useDefault is true |
+| sinkKey | `string?` | Key of a custom `ILogAggregatorSink` registered via `LoggerManager.Initialize(provider, customSinks)` | - |
+| sinkTypeName | `string?` | Assembly-qualified type name of a custom `ILogAggregatorSink` to instantiate via reflection (needs a public parameterless constructor) | - |
 
-Set `useDefault: false` to supply your own `ILogAggregatorSink` instead of the built-in HTTP sink.
+Set `useDefault: false` to supply your own `ILogAggregatorSink`, resolved via `sinkKey` first, then `sinkTypeName`. See [Remote Log Aggregator](#remote-log-aggregator-centralized-sink) for full examples of both.
+
 
 ## Formatter
 
@@ -360,5 +396,5 @@ Archive → Compress → Retention Cleanup → Write Log
 Same pipeline for sync and async logging - async just moves the tail end onto a background worker. Single lock guards the lifecycle, so writes stay thread-safe and ordered with no timers/schedulers anywhere.
 
 <p align="center">
-<strong>(c) 2026 Srimani. All rights reserved.</strong>
+<strong>© 2026 Srimani. All rights reserved.</strong>
 </p>

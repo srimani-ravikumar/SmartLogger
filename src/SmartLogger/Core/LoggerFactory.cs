@@ -51,13 +51,23 @@ internal class LoggerFactory
     private readonly ConcurrentDictionary<string, ISmartLogger> _loggers = new();
 
     /// <summary>
+    /// Custom log aggregator sinks registered in code, keyed by <see cref="LogAggregatorConfiguration.SinkKey"/>.
+    /// </summary>
+    private readonly IReadOnlyDictionary<string, ILogAggregatorSink> _customSinks;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="LoggerFactory"/> class.
     /// </summary>
     /// <param name="provider">Configuration provider.</param>
+    /// <param name="customSinks">
+    /// Optional map of custom <see cref="ILogAggregatorSink"/> instances, keyed by the value referenced
+    /// via <see cref="LogAggregatorConfiguration.SinkKey"/> in configuration.
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when provider is null.</exception>
-    internal LoggerFactory(ILogConfigurationProvider provider)
+    internal LoggerFactory(ILogConfigurationProvider provider, IReadOnlyDictionary<string, ILogAggregatorSink>? customSinks = null)
     {
         _configuration = provider?.Load() ?? throw new ArgumentNullException(nameof(provider));
+        _customSinks = customSinks ?? new Dictionary<string, ILogAggregatorSink>();
     }
 
     /// <summary>
@@ -127,7 +137,7 @@ internal class LoggerFactory
     /// <summary>
     /// Builds appenders from configuration.
     /// </summary>
-    private static List<ILogAppender> BuildAppenders(LogConfigurationHolder config)
+    private List<ILogAppender> BuildAppenders(LogConfigurationHolder config)
     {
         var appenders = new List<ILogAppender>();
 
@@ -162,7 +172,7 @@ internal class LoggerFactory
     /// Centralizes appender composition so both initial logger creation
     /// and configuration reload follow the same creation path.
     /// </remarks>
-    private static ILogAppender CreateConfiguredAppender(AppenderConfiguration config, LogConfigurationHolder globalConfig)
+    private ILogAppender CreateConfiguredAppender(AppenderConfiguration config, LogConfigurationHolder globalConfig)
     {
         var appenderLogLevel =
             config.AppenderLogLevel ?? globalConfig.RootLogLevel;
@@ -214,20 +224,56 @@ internal class LoggerFactory
     /// <summary>
     /// Resolves the <see cref="ILogAggregatorSink"/> to use for a LogAggregator destination.
     /// </summary>
-    private static ILogAggregatorSink CreateAggregatorSink(LogAggregatorConfiguration aggregatorConfig)
+    /// <remarks>
+    /// Resolution order when <see cref="LogAggregatorConfiguration.UseDefault"/> is false:
+    /// <list type="number">
+    /// <item><description><see cref="LogAggregatorConfiguration.SinkKey"/> looked up in sinks registered via <c>LoggerManager.Initialize</c></description></item>
+    /// <item><description><see cref="LogAggregatorConfiguration.SinkTypeName"/> instantiated via reflection (requires a public parameterless constructor)</description></item>
+    /// </list>
+    /// </remarks>
+    private ILogAggregatorSink CreateAggregatorSink(LogAggregatorConfiguration aggregatorConfig)
     {
         if (aggregatorConfig is null)
             throw new InvalidOperationException(
                 "LogAggregator destination requires 'LogAggregator' configuration.");
 
-        if (!aggregatorConfig.UseDefault)
-            throw new NotSupportedException(
-                "Custom ILogAggregatorSink implementations are not yet supported through configuration. Set UseDefault to true.");
+        if (aggregatorConfig.UseDefault)
+        {
+            if (aggregatorConfig.Endpoint is null)
+                throw new InvalidOperationException(
+                    "LogAggregator destination requires a valid 'Endpoint' when UseDefault is true.");
 
-        if (aggregatorConfig.Endpoint is null)
+            return new HttpLogAggregatorSink(new HttpClient(), aggregatorConfig.Endpoint);
+        }
+
+        if (!string.IsNullOrWhiteSpace(aggregatorConfig.SinkKey))
+        {
+            return _customSinks.TryGetValue(aggregatorConfig.SinkKey, out var registeredSink)
+                ? registeredSink
+                : throw new InvalidOperationException(
+                    $"No custom ILogAggregatorSink was registered for SinkKey '{aggregatorConfig.SinkKey}'. " +
+                    "Register it via LoggerManager.Initialize(provider, customSinks).");
+        }
+
+        if (!string.IsNullOrWhiteSpace(aggregatorConfig.SinkTypeName))
+            return CreateSinkFromTypeName(aggregatorConfig.SinkTypeName);
+
+        throw new InvalidOperationException(
+            "LogAggregator destination with UseDefault=false requires either 'SinkKey' or 'SinkTypeName' to resolve a custom ILogAggregatorSink.");
+    }
+
+    /// <summary>
+    /// Instantiates an <see cref="ILogAggregatorSink"/> from its assembly-qualified type name via reflection.
+    /// </summary>
+    private static ILogAggregatorSink CreateSinkFromTypeName(string sinkTypeName)
+    {
+        var sinkType = Type.GetType(sinkTypeName, throwOnError: false)
+            ?? throw new InvalidOperationException($"Could not resolve type '{sinkTypeName}' for SinkTypeName.");
+
+        if (Activator.CreateInstance(sinkType) is not ILogAggregatorSink sink)
             throw new InvalidOperationException(
-                "LogAggregator destination requires a valid 'Endpoint' when UseDefault is true.");
+                $"Type '{sinkTypeName}' must implement {nameof(ILogAggregatorSink)} and expose a public parameterless constructor.");
 
-        return new HttpLogAggregatorSink(new HttpClient(), aggregatorConfig.Endpoint);
+        return sink;
     }
 }

@@ -1,6 +1,7 @@
 ﻿using SmartLogger.Appenders.Aggregation;
 using SmartLogger.Configurations;
 using SmartLogger.Core;
+using System.Threading;
 
 internal class LoggerDemo
 {
@@ -15,12 +16,13 @@ internal class LoggerDemo
         //DemoConsolePlusFile();
         //DemoRemoteLogAggregatorUseDefault(); TODO: enfore string config validation before launching
         //DemoRemoteLogAggregatorCustomSinkViaCode();
-        DemoRemoteLogAggregatorCustomSinkViaTypeName();
+        //DemoRemoteLogAggregatorCustomSinkViaTypeName();
         //DemoHighThroughputAsync();
         //DemoLongRunningCompliance();
         //DemoPerComponentOverrides();
         //DemoCustomConsolePattern();
         //DemoJsonTrimmedFields();
+        DemoAutoReloadBattleTest();
 
         Console.WriteLine("\n=== Demo Completed ===");
         Console.ReadKey();
@@ -560,6 +562,130 @@ internal class LoggerDemo
         var logger = LoggerManager.GetLogger("TrimmedJsonFields");
 
         logger.Info("Order processed successfully.");
+    }
+
+    // --------------------------------------------------------
+    // Use Case: Live Auto-Reload Battle Test
+    // --------------------------------------------------------
+    // smartlogger.json (copied next to the build output) is the file under test.
+    // Each scenario below is independent - uncomment ONE at a time and run the
+    // matching PowerShell script from scripts/ in a separate terminal while it loops.
+    // Run scripts/restore-baseline.ps1 between scenarios to reset to a clean state.
+
+    private static void DemoAutoReloadBattleTest()
+    {
+        Console.WriteLine("\n11. Live Auto-Reload Battle Test");
+        Console.WriteLine("-----------------------------------");
+        Console.WriteLine("Edit scripts/*.ps1 usage notes in each scenario method.\n");
+
+        Scenario_BasicLiveReload_LogLevelChange();
+        //Scenario_InvalidJsonDuringEdit_ShouldKeepOldConfig();
+        //Scenario_SemanticallyInvalidConfig_ShouldKeepOldConfig();
+        //Scenario_RapidSaveStorm_Debounce();
+        //Scenario_AppenderDestinationSwitch_RuntimeRewire();
+        //Scenario_FileDeletedWhileWatched();
+    }
+
+    /// <summary>
+    /// Scenario 1: rootLogLevel flips INFO -> DEBUG -> INFO while logging continuously.
+    /// Expected: Debug lines appear/disappear live, no restart needed.
+    /// </summary>
+    private static void Scenario_BasicLiveReload_LogLevelChange()
+    {
+        Console.WriteLine("Scenario 1: Basic live reload (rootLogLevel INFO <-> DEBUG)");
+        Console.WriteLine("Run: scripts/toggle-loglevel.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.BasicLevel"), TimeSpan.FromSeconds(35));
+    }
+
+    /// <summary>
+    /// Scenario 2: config file is briefly replaced with malformed JSON, then restored.
+    /// Expected: reload attempt fails silently, previous configuration keeps running.
+    /// </summary>
+    private static void Scenario_InvalidJsonDuringEdit_ShouldKeepOldConfig()
+    {
+        Console.WriteLine("Scenario 2: Malformed JSON mid-edit (must keep last good config)");
+        Console.WriteLine("Run: scripts/corrupt-json.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.CorruptJson"), TimeSpan.FromSeconds(15));
+    }
+
+    /// <summary>
+    /// Scenario 3: config file is briefly replaced with structurally valid but semantically
+    /// invalid JSON (FileSystem destination without a "file" block), then restored.
+    /// Expected: ConfigurationValidator rejects the reload, previous configuration keeps running.
+    /// </summary>
+    private static void Scenario_SemanticallyInvalidConfig_ShouldKeepOldConfig()
+    {
+        Console.WriteLine("Scenario 3: Semantically invalid config (must keep last good config)");
+        Console.WriteLine("Run: scripts/invalid-semantic-config.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.InvalidSemantics"), TimeSpan.FromSeconds(15));
+    }
+
+    /// <summary>
+    /// Scenario 4: many rapid writes simulate a FileSystemWatcher event storm.
+    /// Expected: reload lock + 100ms debounce absorb the storm, no crash, final write wins.
+    /// </summary>
+    private static void Scenario_RapidSaveStorm_Debounce()
+    {
+        Console.WriteLine("Scenario 4: Rapid save storm (debounce under FileSystemWatcher flood)");
+        Console.WriteLine("Run: scripts/reload-storm.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.Storm"), TimeSpan.FromSeconds(15));
+    }
+
+    /// <summary>
+    /// Scenario 5: appender destination flips between Console and FileSystem at runtime.
+    /// Expected: LoggerFactory soft-reload rewires appenders live; check Logs/ReloadTest*.log
+    /// for leaked/duplicate file handles after the run.
+    /// </summary>
+    private static void Scenario_AppenderDestinationSwitch_RuntimeRewire()
+    {
+        Console.WriteLine("Scenario 5: Appender destination switch (Console <-> FileSystem)");
+        Console.WriteLine("Run: scripts/switch-destination.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.DestinationSwitch"), TimeSpan.FromSeconds(25));
+    }
+
+    /// <summary>
+    /// Scenario 6: watched config file is deleted, then recreated with a different rootLogLevel.
+    /// Expected: Created/Deleted watcher events (added alongside Changed) pick up the recreate,
+    /// triggering a reload with no crash in between.
+    /// </summary>
+    private static void Scenario_FileDeletedWhileWatched()
+    {
+        Console.WriteLine("Scenario 6: Config file deleted and recreated while watched");
+        Console.WriteLine("Run: scripts/delete-and-recreate.ps1\n");
+
+        LoggerManager.Initialize(new JsonConfigurationProvider("smartlogger.json", enableAutoReload: true));
+
+        RunObservationLoop(LoggerManager.GetLogger("ReloadTest.DeleteRecreate"), TimeSpan.FromSeconds(10));
+    }
+
+    /// <summary>
+    /// Logs a Debug/Info tick every 500ms for the given duration so reload effects are visible live.
+    /// </summary>
+    private static void RunObservationLoop(ISmartLogger logger, TimeSpan duration)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+
+        while (sw.Elapsed < duration)
+        {
+            logger.Debug($"[{DateTime.Now:HH:mm:ss}] debug tick");
+            logger.Info($"[{DateTime.Now:HH:mm:ss}] info tick");
+            Thread.Sleep(500);
+        }
     }
 }
 

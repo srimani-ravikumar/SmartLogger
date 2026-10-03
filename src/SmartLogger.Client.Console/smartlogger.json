@@ -1,0 +1,9 @@
+{
+  "rootLogLevel": "INFO",
+  "appenders": [
+    {
+      "destination": { "type": "Console" },
+      "formatter": { "outputFormat": "PlainText", "layoutType": "Simple" }
+    }
+  ]
+}

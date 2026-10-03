@@ -1,5 +1,6 @@
 ﻿using SmartLogger.Core;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
@@ -97,10 +98,16 @@ public abstract class FileConfigurationProviderBase : ILogConfigurationProvider
             NotifyFilter =
                 NotifyFilters.LastWrite |
                 NotifyFilters.Size |
-                NotifyFilters.CreationTime
+                NotifyFilters.CreationTime |
+                NotifyFilters.FileName
         };
 
+        // Changed alone misses editor save patterns (delete+recreate, temp-file+rename),
+        // so every event that can produce a usable file is wired to the same handler.
         _watcher.Changed += OnConfigurationFileChanged;
+        _watcher.Created += OnConfigurationFileChanged;
+        _watcher.Deleted += OnConfigurationFileChanged;
+        _watcher.Renamed += OnConfigurationFileChanged;
         _watcher.EnableRaisingEvents = true;
     }
 
@@ -119,10 +126,12 @@ public abstract class FileConfigurationProviderBase : ILogConfigurationProvider
 
                 LoggerManager.ReloadConfiguration(this);
             }
-            catch
+            catch (Exception ex)
             {
-                // Intentionally ignored.
-                // Existing configuration remains active.
+                // Reload rejected (missing/malformed/invalid file) - existing configuration
+                // remains active. Surfaced via Trace so failures aren't entirely silent.
+                Trace.TraceWarning(
+                    $"SmartLogger configuration reload skipped for '{FilePath}' ({e.ChangeType}): {ex.Message}");
             }
         }
     }

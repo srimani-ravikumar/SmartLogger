@@ -6,7 +6,7 @@
 SmartLogger follows **Convention over Configuration** - you only specify what differs from the sensible defaults.
 
 - Find the use case closest to yours below, copy the JSON, adjust names/paths.
-- Need a specific property explained? Jump to [Reference Tables](#reference-tables).
+- Need a specific property explained (types, defaults, every option)? See the [Configuration Reference](configuration-reference.md).
 - Need the full token list for custom patterns? See [Custom Pattern Tokens](#custom-pattern-tokens).
 
 # Use Case Recipes
@@ -282,101 +282,9 @@ Output: `{"@timestamp": "...", "severity": "INFO", "msg": "..."}` - handy when i
 * **When does retention cleanup run?** Immediately after a successful roll, no scheduler involved.
 * **Can I plug in my own rolling/naming strategy?** Yes - implement `IRollingStrategy` / `IFileNamingStrategy` and register it.
 
-# Reference Tables
+# Configuration Reference
 
-## Root Configuration
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| rootLogLevel | `LogLevel` | Default log level | INFO |
-| loggerOverrides | `List<LoggerOverrideConfiguration>` | Logger-specific log levels | Empty |
-| appenders | `List<AppenderConfiguration>` | Configured appenders | Empty (Console added automatically) |
-| enableAsyncLoggingProcess | `bool` | Enables async logging | false |
-
-## Appender
-
-| Property | Type | Description |
-|------------|--------|-------------|
-| destination | `DestinationConfiguration` | Where logs are written |
-| formatter | `FormatterConfiguration` | Controls output formatting |
-| filter | `object?` | Reserved for future versions |
-| appenderLogLevel | `LogLevel?` | Overrides RootLogLevel for this appender |
-
-## Destination
-
-| Property | Type | Description |
-|------------|--------|-------------|
-| type | `LogOutputDestination` | Console, FileSystem, LogAggregator or DatabaseSystem |
-| file | `FileConfiguration?` | File configuration (required for FileSystem) |
-| logAggregator | `LogAggregatorConfiguration?` | Aggregator configuration (required for LogAggregator) |
-| database | `object?` | Reserved for future versions |
-
-## Log Aggregator
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| useDefault | `bool` | Use the built-in HTTP sink (`HttpLogAggregatorSink`) | true |
-| endpoint | `Uri?` | HTTP endpoint the default sink posts logs to | Required when useDefault is true |
-| sinkKey | `string?` | Key of a custom `ILogAggregatorSink` registered via `LoggerManager.Initialize(provider, customSinks)` | - |
-| sinkTypeName | `string?` | Assembly-qualified type name of a custom `ILogAggregatorSink` to instantiate via reflection (needs a public parameterless constructor) | - |
-
-Set `useDefault: false` to supply your own `ILogAggregatorSink`, resolved via `sinkKey` first, then `sinkTypeName`. See [Remote Log Aggregator](#remote-log-aggregator-centralized-sink) for full examples of both.
-
-
-## Formatter
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| outputFormat | `LogOutputFormat` | PlainText, Json or Xml | PlainText |
-| layoutType | `LogMessageLayoutType` | Simple, Detailed or Custom | Simple |
-| pattern | `string` | Custom layout pattern | Empty |
-| includedJsonFields | `List<string>` | Fields included in JSON output | Default fields |
-| jsonFieldMappings | `List<JsonFieldMappingConfiguration>` | Renames JSON fields | Empty |
-
-## File
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| directory | `string` | Active log directory | Logs |
-| fileName | `string` | Active log file name | Application |
-| extension | `string` | File extension (no leading dot) | log |
-| naming | `FileNamingConfiguration` | File naming configuration | Date Strategy |
-| rolling | `FileRollingConfiguration` | Rolling configuration | Daily |
-| archive | `ArchiveConfiguration` | Archive configuration | Enabled |
-| retention | `RetentionConfiguration` | Retention configuration | 30 Days |
-
-## File Naming
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| strategy | `FileNamingStrategyType` | Date or Timestamp | Date |
-| dateFormat | `string` | Date format used for rolled files | yyyy-MM-dd |
-
-Naming only decides *what a rolled file is called* - rolling timing, archiving and compression are handled by the `FileLifecycleManager`.
-
-## Rolling
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| strategy | `RollingStrategyType` | Daily or Size | Daily |
-| maxFileSizeMB | `long` | Max size before rolling (Size strategy only) | 10 |
-
-A rolling strategy only answers *"should the active file be rolled?"* - it never names, archives, or compresses files.
-
-## Archive
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| enabled | `bool` | Enables archive support | true |
-| directory | `string` | Archive directory | Archive |
-| compress | `bool` | Compress rolled logs into ZIP | true |
-
-## Retention
-
-| Property | Type | Description | Default |
-|------------|--------|-------------|----------|
-| retentionDays | `int` | Days to retain archived logs | 30 |
-
+Full property tables (types, defaults, every option) for every config object - Root, Appender, Destination, Log Aggregator, Formatter, File, File Naming, Rolling, Archive, Retention - now live in a dedicated, menu-driven doc: [configuration-reference.md](configuration-reference.md).
 
 # Our SmartLogger Pipeline (for the curious)
 

@@ -35,7 +35,7 @@ Shipping this moved me from **using** logging frameworks to **reasoning about** 
 * Hot-reloadable configuration via `JsonConfigurationProvider`
 * Full test coverage under `SmartLogger.Tests`
 
-See [docs/client/package-readme.md](docs/client/package-readme.md) for the user-facing quick start, and [docs/client/configuration-guide.md](docs/client/configuration-guide.md) for the full configuration reference.
+See [docs/client/package-readme.md](docs/client/package-readme.md) for the user-facing quick start, [docs/client/configuration-guide.md](docs/client/configuration-guide.md) for use-case recipes, and [docs/client/configuration-reference.md](docs/client/configuration-reference.md) for the full property reference.
 
 ## "You might think this was just AI-generated?"
 

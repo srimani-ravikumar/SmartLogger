@@ -3,7 +3,7 @@ using SmartLogger.Configurations;
 using SmartLogger.Core;
 using System.Threading;
 
-internal class LoggerDemo
+public class LoggerDemo
 {
     public static int Main(string[] args)
     {
@@ -22,12 +22,11 @@ internal class LoggerDemo
         //DemoPerComponentOverrides();
         //DemoCustomConsolePattern();
         //DemoJsonTrimmedFields();
-        DemoAutoReloadBattleTest();
+        //DemoAutoReloadBattleTest();
 
-        Console.WriteLine("\n=== Demo Completed ===");
-        Console.ReadKey();
+        ConfigurationValidationErrorDemo.Run();
 
-        return 1;
+        return 0;
     }
 
     // --------------------------------------------------------
@@ -687,6 +686,8 @@ internal class LoggerDemo
             Thread.Sleep(500);
         }
     }
+
+    
 }
 
 /// <summary>
@@ -700,4 +701,443 @@ public sealed class ConsoleLogAggregatorSink : ILogAggregatorSink
     /// <inheritdoc/>
     public void Send(LogMessage message) =>
         Console.WriteLine($"[CustomSink] {message.LogLevel} | {message.Message}");
+}
+
+internal class ConfigurationValidationErrorDemo
+{
+    public static void Run()
+    {
+        // ============================================
+        // CONFIGURATION VALIDATOR ERROR SCENARIOS
+        // ============================================
+        Console.WriteLine("\n════════════════════════════════════════════════════════");
+        Console.WriteLine("CONFIGURATION VALIDATOR - ERROR SCENARIOS");
+        Console.WriteLine("════════════════════════════════════════════════════════\n");
+
+        //DemoValidationError_DuplicateDestinations();
+        //DemoValidationError_FileSystemMissingDirectory();
+        //DemoValidationError_FileSystemMissingExtension();
+        //DemoValidationError_LogAggregatorNonJsonFormat();
+        //DemoValidationError_LogAggregatorMissingEndpoint();
+        //DemoValidationError_CustomLayoutMissingPattern();
+        //DemoValidationError_JsonFormatWithoutFields();
+        //DemoValidationError_SizeSizedRollingInvalidSize();
+        //DemoValidationError_LoggerOverrideEmptyName();
+
+        // Run all validation error scenarios
+        DemoValidationError_DuplicateDestinations();
+        DemoValidationError_FileSystemMissingDirectory();
+        DemoValidationError_FileSystemMissingExtension();
+        DemoValidationError_LogAggregatorNonJsonFormat();
+        DemoValidationError_LogAggregatorMissingEndpoint();
+        DemoValidationError_CustomLayoutMissingPattern();
+        DemoValidationError_JsonFormatWithoutFields();
+        DemoValidationError_SizeSizedRollingInvalidSize();
+        DemoValidationError_LoggerOverrideEmptyName();
+    }
+
+    // ========================================================
+    // CONFIGURATION VALIDATOR ERROR SCENARIOS
+    // ========================================================
+
+    /// <summary>
+    /// ERROR SCENARIO: Duplicate Appender Destinations
+    /// </summary>
+    private static void DemoValidationError_DuplicateDestinations()
+    {
+        Console.WriteLine("\n📋 SCENARIO 1: Duplicate Appender Destinations");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting to configure TWO Console appenders (not allowed)...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration { Type = LogOutputDestination.Console }
+                    },
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration { Type = LogOutputDestination.Console }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: FileSystem Appender Missing Directory
+    /// </summary>
+    private static void DemoValidationError_FileSystemMissingDirectory()
+    {
+        Console.WriteLine("\n📋 SCENARIO 2: FileSystem Appender Missing Directory");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting FileSystem appender with EMPTY directory path...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "",  // ❌ EMPTY!
+                                FileName = "MyApp",
+                                Extension = "log"
+                            }
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: FileSystem Appender Missing Extension
+    /// </summary>
+    private static void DemoValidationError_FileSystemMissingExtension()
+    {
+        Console.WriteLine("\n📋 SCENARIO 3: FileSystem Appender Missing Extension");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting FileSystem appender with EMPTY file extension...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "Logs",
+                                FileName = "MyApp",
+                                Extension = ""  // ❌ EMPTY!
+                            }
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: LogAggregator with Non-JSON Format
+    /// </summary>
+    private static void DemoValidationError_LogAggregatorNonJsonFormat()
+    {
+        Console.WriteLine("\n📋 SCENARIO 4: LogAggregator Requires JSON Format");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting LogAggregator with PlainText format (invalid)...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.LogAggregator,
+                            LogAggregator = new LogAggregatorConfiguration
+                            {
+                                UseDefault = true,
+                                Endpoint = new Uri("http://localhost:8080/logs")
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.PlainText  // ❌ MUST BE JSON!
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: LogAggregator Default Sink Missing Endpoint
+    /// </summary>
+    private static void DemoValidationError_LogAggregatorMissingEndpoint()
+    {
+        Console.WriteLine("\n📋 SCENARIO 5: LogAggregator Default Sink Missing Endpoint");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting LogAggregator with UseDefault=true but NO endpoint...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.LogAggregator,
+                            LogAggregator = new LogAggregatorConfiguration
+                            {
+                                UseDefault = true,
+                                Endpoint = null  // ❌ MISSING!
+                            }
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.Json
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: Custom Layout Missing Pattern
+    /// </summary>
+    private static void DemoValidationError_CustomLayoutMissingPattern()
+    {
+        Console.WriteLine("\n📋 SCENARIO 6: Custom Layout Missing Pattern");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting Custom layout type without providing a pattern...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.Console
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            LayoutType = LogMessageLayoutType.Custom,
+                            Pattern = ""  // ❌ EMPTY PATTERN!
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: JSON Format Without Any Included Fields
+    /// </summary>
+    private static void DemoValidationError_JsonFormatWithoutFields()
+    {
+        Console.WriteLine("\n📋 SCENARIO 7: JSON Format Requires At Least One Field");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting JSON format with NO included fields...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.Console
+                        },
+                        Formatter = new FormatterConfiguration
+                        {
+                            OutputFormat = LogOutputFormat.Json,
+                            IncludedJsonFields = new List<string>()  // ❌ EMPTY LIST!
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: Size-Based Rolling with Invalid MaxFileSizeMB
+    /// </summary>
+    private static void DemoValidationError_SizeSizedRollingInvalidSize()
+    {
+        Console.WriteLine("\n📋 SCENARIO 8: Size-Based Rolling Requires MaxFileSizeMB > 0");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting Size-based rolling with MaxFileSizeMB = 0...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                Appenders = new List<AppenderConfiguration>
+                {
+                    new AppenderConfiguration
+                    {
+                        Destination = new DestinationConfiguration
+                        {
+                            Type = LogOutputDestination.FileSystem,
+                            File = new FileConfiguration
+                            {
+                                Directory = "Logs",
+                                FileName = "MyApp",
+                                Extension = "log",
+                                Rolling = new FileRollingConfiguration
+                                {
+                                    Strategy = RollingStrategyType.Size,
+                                    MaxFileSizeMB = 0  // ❌ MUST BE > 0!
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
+
+    /// <summary>
+    /// ERROR SCENARIO: Logger Override with Empty Name
+    /// </summary>
+    private static void DemoValidationError_LoggerOverrideEmptyName()
+    {
+        Console.WriteLine("\n📋 SCENARIO 9: Logger Override Requires Non-Empty Name");
+        Console.WriteLine("─────────────────────────────────────────────────────────\n");
+
+        try
+        {
+            Console.WriteLine("Attempting logger override with EMPTY logger name...\n");
+
+            var config = new LogConfigurationHolder
+            {
+                RootLogLevel = LogLevel.INFO,
+                LoggerOverrides = new List<LoggerOverrideConfiguration>
+                {
+                    new LoggerOverrideConfiguration
+                    {
+                        LoggerName = "",  // ❌ EMPTY!
+                        LogLevel = LogLevel.DEBUG
+                    }
+                }
+            };
+
+            LoggerManager.Initialize(new InMemoryConfigurationProvider(config));
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("❌ VALIDATION ERROR CAUGHT:\n");
+            Console.ResetColor();
+            Console.WriteLine(ex.Message);
+            Console.WriteLine("\n" + new string('─', 60));
+        }
+    }
 }
